@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 
 
 import com.datastax.spark.connector.util.ByteBufferUtil
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 
 /** Estimates amount of memory required to serialize Java/Scala objects */

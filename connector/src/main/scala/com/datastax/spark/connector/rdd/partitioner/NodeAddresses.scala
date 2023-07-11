@@ -4,7 +4,7 @@ import java.net.InetAddress
 
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.util.DriverUtil.{toName, toOption}
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /** Looks up listen address of a cluster node given its Native Transport address.
   * Uses system.peers table as the source of information.

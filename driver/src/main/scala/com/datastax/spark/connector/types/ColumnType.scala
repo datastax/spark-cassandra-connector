@@ -12,7 +12,7 @@ import com.datastax.spark.connector.util._
 
 
 import scala.reflect.runtime.universe._
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /** Serializable representation of column data type. */
 trait ColumnType[T] extends Serializable {

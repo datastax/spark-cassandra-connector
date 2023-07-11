@@ -17,7 +17,7 @@ import org.apache.spark.{Partition, Partitioner, SparkContext, TaskContext}
 import java.io.IOException
 import scala.language.existentials
 import scala.reflect.ClassTag
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 
 /** RDD representing a Table Scan of A Cassandra table.

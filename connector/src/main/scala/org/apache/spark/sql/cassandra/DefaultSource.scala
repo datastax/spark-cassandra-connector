@@ -15,7 +15,7 @@ import org.apache.spark.sql.execution.streaming.Sink
 import org.apache.spark.sql.streaming.OutputMode
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
  *  A Pointer to the DatasourceV2 Implementation of The Cassandra Source

@@ -16,7 +16,7 @@ import com.datastax.spark.connector.util.{CqlWhereParser, Logging}
 import com.datastax.spark.connector.{ColumnName, ColumnRef, TTL, WriteTime}
 import org.apache.spark.sql.cassandra.DsePredicateRules.StorageAttachedIndex
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object ScanHelper extends Logging {
 

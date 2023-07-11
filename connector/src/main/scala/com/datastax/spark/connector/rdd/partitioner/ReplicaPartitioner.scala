@@ -10,7 +10,7 @@ import com.datastax.spark.connector.writer.RowWriterFactory
 import org.apache.spark.{Partition, Partitioner}
 
 import scala.reflect.ClassTag
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 
 case class ReplicaPartition(index: Int, endpoints: Array[String]) extends EndpointPartition

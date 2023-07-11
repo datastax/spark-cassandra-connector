@@ -13,7 +13,7 @@ import com.datastax.spark.connector.{ColumnName, TupleValue}
 import org.apache.commons.lang3.tuple.{Pair, Triple}
 
 import scala.reflect.runtime.universe._
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 case class TupleFieldDef(index: Int, columnType: ColumnType[_]) extends FieldDef {
   override def columnName = index.toString

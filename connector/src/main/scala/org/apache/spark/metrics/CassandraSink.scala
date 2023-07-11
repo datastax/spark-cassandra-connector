@@ -16,7 +16,7 @@ import org.apache.spark.{SecurityManager, SparkConf, SparkEnv}
 import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, ResultSet}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.util.Logging
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class CassandraSink(val properties: Properties, val registry: MetricRegistry, securityMgr: SecurityManager)
   extends Sink with Runnable with Logging {

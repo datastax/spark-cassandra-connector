@@ -6,7 +6,7 @@ import com.datastax.oss.driver.api.core.metadata.Metadata
 import com.datastax.spark.connector.util.DriverUtil.toName
 import org.apache.commons.lang3.StringUtils
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object NameTools {
 

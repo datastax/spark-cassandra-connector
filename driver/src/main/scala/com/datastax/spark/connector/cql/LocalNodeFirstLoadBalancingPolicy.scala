@@ -19,7 +19,7 @@ import com.datastax.oss.driver.internal.core.util.collection.SimpleQueryPlan
 import com.datastax.spark.connector.cql.LocalNodeFirstLoadBalancingPolicy.{LoadBalancingShuffleNodes, _}
 import com.datastax.spark.connector.util.DriverUtil.{toAddress, toOption}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.Random
 
 /** Selects local node first and then nodes in local DC in random order. Never selects nodes from other DCs.

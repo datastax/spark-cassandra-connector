@@ -7,7 +7,7 @@ import com.datastax.oss.driver.api.core.auth.AuthenticationException
 import com.datastax.spark.connector.cluster.AuthCluster
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase with AuthCluster {
 

@@ -31,7 +31,7 @@ import com.datastax.spark.connector.util.{CountingIterator, MultiMergeJoinIterat
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
   * A RDD which pulls from provided separate CassandraTableScanRDDs which share partition keys type and

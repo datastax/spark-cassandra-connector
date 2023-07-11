@@ -5,7 +5,7 @@ import com.datastax.spark.connector.types.NullableTypeConverter
 import com.datastax.spark.connector.util.DriverUtil.toName
 
 import scala.reflect.runtime.universe._
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 final case class UDTValue(metaData: CassandraRowMetadata, columnValues: IndexedSeq[AnyRef])
   extends ScalaGettableData {

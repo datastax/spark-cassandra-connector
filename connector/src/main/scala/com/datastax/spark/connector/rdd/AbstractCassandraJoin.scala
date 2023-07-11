@@ -14,7 +14,7 @@ import org.apache.spark.metrics.InputMetricsUpdater
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partition, TaskContext}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 /**
  * This trait contains shared methods from [[com.datastax.spark.connector.rdd.CassandraJoinRDD]] and
  * [[com.datastax.spark.connector.rdd.CassandraLeftJoinRDD]] to avoid code duplication.

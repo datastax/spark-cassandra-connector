@@ -12,7 +12,7 @@ import com.datastax.oss.driver.internal.core.cql.{DefaultColumnDefinition, Defau
 import com.datastax.oss.protocol.internal.ProtocolConstants
 import com.datastax.oss.protocol.internal.response.result.{ColumnSpec, RawType}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class RowMock(columnSizes: Option[Int]*) extends Row {
 

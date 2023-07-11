@@ -4,7 +4,7 @@ import com.datastax.spark.connector.ccm.CcmBridge
 import com.datastax.spark.connector.util.{Logging, SerialShutdownHooks}
 import org.apache.commons.lang3.ClassUtils
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.mutable
 
 /** Source of [[Cluster]]s for all tests executed within a single test group (single process/JVM).

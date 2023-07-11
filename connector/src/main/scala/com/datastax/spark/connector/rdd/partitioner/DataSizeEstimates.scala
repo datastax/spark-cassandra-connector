@@ -5,7 +5,7 @@ import com.datastax.oss.driver.api.core.cql.SimpleStatementBuilder
 import com.datastax.oss.driver.api.core.servererrors.InvalidQueryException
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 
 /** Estimates amount of data in the Cassandra table.

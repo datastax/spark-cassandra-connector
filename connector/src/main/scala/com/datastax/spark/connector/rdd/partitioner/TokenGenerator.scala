@@ -10,7 +10,7 @@ import com.datastax.spark.connector.util.Logging
 import com.datastax.spark.connector.util.PatitionKeyTools._
 import com.datastax.spark.connector.writer.{BoundStatementBuilder, NullKeyColumnException, RowWriter}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
   * A utility class for determining the token of a given key. Uses a bound statement to determine

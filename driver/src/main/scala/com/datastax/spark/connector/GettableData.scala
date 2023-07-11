@@ -8,7 +8,7 @@ import com.datastax.oss.driver.api.core.`type`.codec.TypeCodec
 import com.datastax.oss.driver.api.core.data.{TupleValue => DriverTupleValue, UdtValue => DriverUDTValue}
 import com.datastax.spark.connector.types.TypeConverter.StringConverter
 import com.datastax.spark.connector.util.ByteBufferUtil
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 trait GettableData extends GettableByIndexData {
 

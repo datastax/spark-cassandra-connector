@@ -14,7 +14,7 @@ import com.datastax.spark.connector.CassandraRow
 import com.datastax.spark.connector.mapper.{ColumnMapper, JavaBeanColumnMapper}
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import com.datastax.spark.connector.writer.RowWriterFactory
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /** A helper class to make it possible to access components written in Scala from Java code.
   * INTERNAL API

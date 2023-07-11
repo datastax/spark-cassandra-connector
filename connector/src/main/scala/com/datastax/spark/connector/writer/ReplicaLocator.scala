@@ -11,7 +11,7 @@ import com.datastax.spark.connector.util.{DriverUtil, Logging, tableFromCassandr
 import com.datastax.spark.connector.util.PatitionKeyTools._
 
 import scala.collection._
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
  * A utility class for determining the Replica Set (Ip Addresses) of a particular Cassandra Row. Used

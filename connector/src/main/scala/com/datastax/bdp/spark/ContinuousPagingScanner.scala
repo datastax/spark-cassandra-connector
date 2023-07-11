@@ -19,7 +19,7 @@ import com.datastax.spark.connector.rdd.ReadConf
 import com.datastax.spark.connector.util.DriverUtil.toName
 import com.datastax.spark.connector.util._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 case class ContinuousPagingScanner(
   readConf: ReadConf,
@@ -111,7 +111,7 @@ case class ContinuousPagingScanner(
   }
 
   private def getMetaData(result: ContinuousResultSet): CassandraRowMetadata = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     val columnDefs = result.getColumnDefinitions.asScala
     val rsColumnNames = columnDefs.map(c => toName(c.getName))
     val codecs = columnDefs

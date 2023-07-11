@@ -18,7 +18,7 @@ import org.apache.commons.lang3.tuple
 
 import scala.collection.immutable.{TreeMap, TreeSet}
 import scala.reflect.runtime.universe._
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class TypeConversionException(val message: String, cause: Exception = null) extends Exception(message, cause)
 

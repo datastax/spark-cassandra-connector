@@ -18,7 +18,7 @@ import com.datastax.spark.connector.util.{ConfigParameter, DeprecatedConfigParam
 import org.apache.spark.{SparkConf, SparkEnv, SparkFiles}
 import org.slf4j.LoggerFactory
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /** Creates both native and Thrift connections to Cassandra.
   * The connector provides a DefaultConnectionFactory.

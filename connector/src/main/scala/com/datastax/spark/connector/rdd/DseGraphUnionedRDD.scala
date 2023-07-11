@@ -19,7 +19,7 @@ import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
 import com.datastax.spark.connector.rdd.partitioner.{BucketingRangeIndex, CassandraPartition, TokenGenerator, TokenRangeWithPartitionIndex}
 import com.datastax.spark.connector.util.{Logging, schemaFromCassandra}
 import com.datastax.spark.connector.writer.RowWriter
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
   * A Java Friendly api for DseGraphUnionedRDD to make it easier to call

@@ -80,7 +80,7 @@ lazy val commonSettings = Seq(
           "org.scala-lang.modules" %% "scala-collection-compat" % "2.11.0",
           "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"
         )
-      case _ => Seq()
+      case _ => Seq("org.scala-lang.modules" %% "scala-collection-compat" % "2.11.0")
     }
   }
 )

@@ -2,7 +2,7 @@ package com.datastax.spark.connector.datasource
 
 import org.scalatest.concurrent.Eventually._
 import org.apache.spark.sql.catalyst.analysis.{NamespaceAlreadyExistsException, NoSuchNamespaceException}
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class CassandraCatalogNamespaceSpec extends CassandraCatalogSpecBase {
 

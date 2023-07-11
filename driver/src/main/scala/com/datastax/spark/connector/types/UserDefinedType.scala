@@ -11,7 +11,7 @@ import com.datastax.spark.connector.types.TypeAdapters.ValueByNameAdapter
 import com.datastax.spark.connector.{CassandraRowMetadata, ColumnName, UDTValue}
 
 import scala.reflect.runtime.universe._
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /** A Cassandra user defined type field metadata. It consists of a name and an associated column type.
   * The word `column` instead of `field` is used in member names because we want to treat UDT field

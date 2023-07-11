@@ -14,7 +14,7 @@ import com.datastax.spark.connector.cql.{CassandraConnector, TableDef}
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
 import com.datastax.spark.connector.writer.RowWriterFactory
 import org.apache.spark.sql.connector.read.InputPartition
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 
 /** Creates CassandraPartitions for given Cassandra table */

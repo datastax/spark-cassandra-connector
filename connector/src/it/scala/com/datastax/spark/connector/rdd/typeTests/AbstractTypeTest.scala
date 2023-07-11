@@ -8,7 +8,7 @@ import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import com.datastax.spark.connector.types.TypeConverter
 import com.datastax.spark.connector.writer.RowWriterFactory
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.Future
 import scala.reflect._
 

@@ -6,7 +6,7 @@ import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.oss.protocol.internal.util.Bytes
 import com.datastax.spark.connector.cluster.DefaultCluster
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class BlobTypeTest extends AbstractTypeTest[Array[Byte], ByteBuffer] with DefaultCluster {
 
@@ -80,7 +80,7 @@ class BlobTypeTest extends AbstractTypeTest[Array[Byte], ByteBuffer] with Defaul
       Bytes.toHexString(pkey),
       set1.map(Bytes.toHexString(_)),
       list1.map(Bytes.toHexString(_)),
-      map1.mapValues(Bytes.toHexString(_)),
+      map1.map{ case (k,v) => (k, Bytes.toHexString(v))},
       map2.map{ case (k,v) => (Bytes.toHexString(k), v)})
     }
 
@@ -91,8 +91,8 @@ class BlobTypeTest extends AbstractTypeTest[Array[Byte], ByteBuffer] with Defaul
         x,
         expectedCollections._1.map(Bytes.toHexString(_)),
         expectedCollections._2.map(Bytes.toHexString(_)),
-        expectedCollections._3.mapValues(Bytes.toHexString(_)),
-        expectedCollections._4.map { case (k, v) => (Bytes.toHexString(k), v) }))
+        expectedCollections._3.map{ case (k, v) => (k, Bytes.toHexString(v)) },
+        expectedCollections._4.map{ case (k, v) => (Bytes.toHexString(k), v) }))
       expected
     }
   }
