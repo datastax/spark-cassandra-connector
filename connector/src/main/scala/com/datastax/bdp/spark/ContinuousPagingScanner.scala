@@ -112,7 +112,7 @@ case class ContinuousPagingScanner(
 
   private def getMetaData(result: ContinuousResultSet): CassandraRowMetadata = {
     import scala.jdk.CollectionConverters._
-    val columnDefs = result.getColumnDefinitions.asScala
+    val columnDefs = result.getColumnDefinitions.asScala.toSeq
     val rsColumnNames = columnDefs.map(c => toName(c.getName))
     val codecs = columnDefs
       .map(col => codecRegistry.codecFor(col.getType))
