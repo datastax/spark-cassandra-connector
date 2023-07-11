@@ -10,13 +10,13 @@ import java.util.Properties
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.function.BiConsumer
 
-import scala.collection.JavaConversions._
 import com.codahale.metrics.{Counting, Gauge, Metered, Metric, MetricRegistry, Sampling}
 import org.apache.spark.metrics.sink.Sink
 import org.apache.spark.{SecurityManager, SparkConf, SparkEnv}
 import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, ResultSet}
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.util.Logging
+import scala.collection.JavaConverters._
 
 class CassandraSink(val properties: Properties, val registry: MetricRegistry, securityMgr: SecurityManager)
   extends Sink with Runnable with Logging {
@@ -55,7 +55,7 @@ class CassandraSink(val properties: Properties, val registry: MetricRegistry, se
       connector.withSessionDo { session =>
         val stmt = session.prepare(writer.insertStatement)
 
-        for ((MetricName(appId, componentId, metricId), metric) <- registry.getMetrics.iterator) {
+        for ((MetricName(appId, componentId, metricId), metric) <- registry.getMetrics.asScala.iterator) {
           val bndStmt = stmt.bind(writer.build(componentId, metricId, metric): _*)
           session.executeAsync(bndStmt).whenComplete(warnOnError)
         }

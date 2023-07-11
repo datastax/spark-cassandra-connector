@@ -55,7 +55,7 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
      */
     public CassandraJavaRDD<R> select(String... columnNames) {
         Seq<ColumnRef> columnRefs = toScalaSeq(toSelectableColumnRefs(columnNames));
-        CassandraRDD<R> newRDD = rdd().select(columnRefs);
+        CassandraRDD<R> newRDD = rdd().select(columnRefs.toSeq());
         return wrap(newRDD);
     }
 
@@ -68,7 +68,7 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
      */
     public CassandraJavaRDD<R> select(ColumnRef... columns) {
         Seq<ColumnRef> columnRefs = JavaApiHelper.toScalaSeq(columns);
-        CassandraRDD<R> newRDD = rdd().select(columnRefs);
+        CassandraRDD<R> newRDD = rdd().select(columnRefs.toSeq());
         return wrap(newRDD);
     }
 

@@ -4,7 +4,8 @@ import sbt.{Compile, moduleFilter, _}
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 
 lazy val scala212 = "2.12.11"
-lazy val supportedScalaVersions = List(scala212)
+lazy val scala213 = "2.13.11"
+lazy val supportedScalaVersions = List(scala212, scala213)
 
 // factor out common settings
 ThisBuild / scalaVersion := scala212
@@ -53,6 +54,17 @@ lazy val assemblySettings = Seq(
   },
 )
 
+val scalaReleaseVersion = SettingKey[Int]("scalaReleaseVersion")
+scalaReleaseVersion := {
+  val v = scalaVersion.value
+  CrossVersion.partialVersion(v).map(_._1.toInt).getOrElse {
+    throw new RuntimeException(s"could not get Scala release version from $v")
+  }
+}
+
+
+
+
 lazy val commonSettings = Seq(
   // dependency updates check
   dependencyUpdatesFailBuild := true,
@@ -60,8 +72,19 @@ lazy val commonSettings = Seq(
   fork := true,
   parallelExecution := true,
   testForkedParallel := false,
-  testOptions += Tests.Argument(TestFrameworks.JUnit, "-v")
+  testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
+  libraryDependencies ++= {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, scalaMajor)) if scalaMajor == 13 =>
+        Seq(
+          "org.scala-lang.modules" %% "scala-collection-compat" % "2.11.0",
+          "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"
+        )
+      case _ => Seq()
+    }
+  }
 )
+
 
 val annotationProcessor = Seq(
   "-processor", "com.datastax.oss.driver.internal.mapper.processor.MapperProcessor"
@@ -70,6 +93,7 @@ val annotationProcessor = Seq(
 def scalacVersionDependantOptions(scalaBinary: String): Seq[String] = scalaBinary match {
   case "2.11" => Seq()
   case "2.12" => Seq("-no-java-comments") //Scala Bug on inner classes, CassandraJavaUtil,
+  case "2.13" => Seq("-no-java-comments") //Scala Bug on inner classes, CassandraJavaUtil,
 }
 
 lazy val root = (project in file("."))
@@ -80,6 +104,7 @@ lazy val root = (project in file("."))
     crossScalaVersions := Nil,
     publish / skip := true
   )
+
 
 lazy val connector = (project in file("connector"))
   .configs(IntegrationTest)

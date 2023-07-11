@@ -16,9 +16,9 @@ import com.datastax.spark.connector.util.ByteBufferUtil
 import com.datastax.spark.connector.util.Symbols._
 import org.apache.commons.lang3.tuple
 
-import scala.collection.JavaConversions._
 import scala.collection.immutable.{TreeMap, TreeSet}
 import scala.reflect.runtime.universe._
+import scala.collection.JavaConverters._
 
 class TypeConversionException(val message: String, cause: Exception = null) extends Exception(message, cause)
 
@@ -336,7 +336,7 @@ object TypeConverter {
       c
     }
     def targetTypeTag = GregorianCalendarTypeTag
-    def convertPF = DateConverter.convertPF.andThen(calendar)
+    def convertPF = DateConverter.convertPF.andThen(calendar _)
   }
 
   private val TimestampTypeTag = implicitly[TypeTag[Timestamp]]
@@ -697,9 +697,9 @@ object TypeConverter {
 
     def convertPF = {
       case null => bf.apply().result()
-      case x: java.util.List[_] => newCollection(x)
-      case x: java.util.Set[_] => newCollection(x)
-      case x: java.util.Map[_, _] => newCollection(x)
+      case x: java.util.List[_] => newCollection(x.asScala)
+      case x: java.util.Set[_] => newCollection(x.asScala)
+      case x: java.util.Map[_, _] => newCollection(x.asScala)
       case x: Iterable[_] => newCollection(x)
     }
   }

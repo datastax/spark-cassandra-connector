@@ -48,7 +48,7 @@ extends Iterator[Seq[Seq[T]]] {
     items.map (i => {
       var buffer = new ArrayBuffer[T]
       i.appendWhile(l =>  keyExtract(l) == key, buffer)
-      buffer
+      buffer.toSeq
     })
   }
 }

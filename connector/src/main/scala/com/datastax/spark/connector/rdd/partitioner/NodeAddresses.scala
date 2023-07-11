@@ -2,9 +2,9 @@ package com.datastax.spark.connector.rdd.partitioner
 
 import java.net.InetAddress
 
-import scala.collection.JavaConversions._
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.util.DriverUtil.{toName, toOption}
+import scala.collection.JavaConverters._
 
 /** Looks up listen address of a cluster node given its Native Transport address.
   * Uses system.peers table as the source of information.
@@ -28,7 +28,7 @@ class NodeAddresses(conn: CassandraConnector) extends Serializable {
       // TODO: fetch information about the local node from system.local, when CASSANDRA-9436 is done
       val rs = session.execute(s"SELECT $nativeTransportAddressColumnName, $listenAddressColumnName FROM $table")
       for {
-        row <- rs.all()
+        row <- rs.all().asScala
         nativeTransportAddress <- Option(row.getInetAddress(nativeTransportAddressColumnName))
         listenAddress = row.getInetAddress(listenAddressColumnName)
       } yield (nativeTransportAddress, listenAddress)

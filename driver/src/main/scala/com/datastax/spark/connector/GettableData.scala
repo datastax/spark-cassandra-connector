@@ -2,13 +2,13 @@ package com.datastax.spark.connector
 
 import java.nio.ByteBuffer
 
-import scala.collection.JavaConversions._
 import com.datastax.oss.driver.api.core.cql.Row
 
 import com.datastax.oss.driver.api.core.`type`.codec.TypeCodec
 import com.datastax.oss.driver.api.core.data.{TupleValue => DriverTupleValue, UdtValue => DriverUDTValue}
 import com.datastax.spark.connector.types.TypeConverter.StringConverter
 import com.datastax.spark.connector.util.ByteBufferUtil
+import scala.collection.JavaConverters._
 
 trait GettableData extends GettableByIndexData {
 
@@ -74,9 +74,9 @@ object GettableData {
   private[connector] def convert(obj: Any): AnyRef = {
     obj match {
       case bb: ByteBuffer => ByteBufferUtil.toArray(bb)
-      case list: java.util.List[_] => list.view.map(convert).toList
-      case set: java.util.Set[_] => set.view.map(convert).toSet
-      case map: java.util.Map[_, _] => map.view.map { case (k, v) => (convert(k), convert(v))}.toMap
+      case list: java.util.List[_] => list.asScala.view.map(convert).toList
+      case set: java.util.Set[_] => set.asScala.view.map(convert).toSet
+      case map: java.util.Map[_, _] => map.asScala.view.map { case (k, v) => (convert(k), convert(v))}.toMap
       case udtValue: DriverUDTValue => UDTValue.fromJavaDriverUDTValue(udtValue)
       case tupleValue: DriverTupleValue => TupleValue.fromJavaDriverTupleValue(tupleValue)
       case other => other.asInstanceOf[AnyRef]

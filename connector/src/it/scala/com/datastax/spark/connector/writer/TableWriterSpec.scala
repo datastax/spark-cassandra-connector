@@ -4,7 +4,7 @@ import java.io.IOException
 
 import com.datastax.oss.driver.api.core.DefaultProtocolVersion
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.Future
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.{SomeColumns, _}
@@ -107,7 +107,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
   private def verifyKeyValueTable(tableName: String) {
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM $ks.""" + tableName).all()
+      val result = session.execute(s"""SELECT * FROM $ks.""" + tableName).all().asScala
       result should have size 3
       for (row <- result) {
         Some(row.getInt("key")) should contain oneOf(1, 2, 3)
@@ -279,7 +279,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     val col = Seq((1, "value1"), (2, "value2"), (3, "value3"))
     sc.parallelize(col).saveToCassandra(ks, "camelCase", SomeColumns("primaryKey", "textValue"))
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM $ks."camelCase"""").all()
+      val result = session.execute(s"""SELECT * FROM $ks."camelCase"""").all().asScala
       result should have size 3
       for (row <- result) {
         Some(row.getInt(0)) should contain oneOf(1, 2, 3)
@@ -293,7 +293,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     val col = Seq((1, 1L, None))
     sc.parallelize(col).saveToCassandra(ks, "key_value", SomeColumns("key", "group", "value"))
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM $ks.key_value""").all()
+      val result = session.execute(s"""SELECT * FROM $ks.key_value""").all().asScala
       result should have size 1
       for (row <- result) {
         row.getString(2) should be (null)
@@ -309,7 +309,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
     sc.parallelize(Seq(row)).saveToCassandra(ks, "nulls")
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM $ks.nulls""").all()
+      val result = session.execute(s"""SELECT * FROM $ks.nulls""").all().asScala
       result should have size 1
       for (r <- result) {
         r.getInt(0) shouldBe key
@@ -324,7 +324,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     val col = Seq((1, 1L, None))
     sc.parallelize(col).saveToCassandra(ks, "key_value", SomeColumns("key", "group"))
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM $ks.key_value""").all()
+      val result = session.execute(s"""SELECT * FROM $ks.key_value""").all().asScala
       result should have size 1
       for (row <- result) {
         row.getInt(0) should be (1)
@@ -338,7 +338,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     val col = Seq((2, 1L, None))
     sc.parallelize(col).saveToCassandra(ks, "key_value", SomeColumns("key", "group"))
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM $ks.key_value""").all()
+      val result = session.execute(s"""SELECT * FROM $ks.key_value""").all().asScala
       result should have size 1
       for (row <- result) {
         row.getInt(0) should be (2)
@@ -354,14 +354,14 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     sc.parallelize(col).saveToCassandra(ks, "collections", SomeColumns("key", "l", "s", "m"))
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM $ks.collections""").all()
+      val result = session.execute(s"""SELECT * FROM $ks.collections""").all().asScala
       result should have size 2
       val rows = result.groupBy(_.getInt(0)).mapValues(_.head)
       val row0 = rows(1)
       val row1 = rows(2)
-      row0.getList("l", classOf[String]).toSeq shouldEqual Seq("item1", "item2")
-      row0.getSet("s", classOf[String]).toSeq shouldEqual Seq("item1", "item2")
-      row0.getMap("m", classOf[String], classOf[String]).toMap shouldEqual Map("key1" -> "value1", "key2" -> "value2")
+      row0.getList("l", classOf[String]).asScala.toSeq shouldEqual Seq("item1", "item2")
+      row0.getSet("s", classOf[String]).asScala.toSeq shouldEqual Seq("item1", "item2")
+      row0.getMap("m", classOf[String], classOf[String]).asScala.toMap shouldEqual Map("key1" -> "value1", "key2" -> "value2")
       row1.isNull("l") shouldEqual true
       row1.isNull("m") shouldEqual true
       row1.isNull("s") shouldEqual true
@@ -372,7 +372,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     val col = Seq((1, Some(Array[Byte](0, 1, 2, 3))), (2, None))
     sc.parallelize(col).saveToCassandra(ks, "blobs", SomeColumns("key", "b"))
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM $ks.blobs""").all()
+      val result = session.execute(s"""SELECT * FROM $ks.blobs""").all().asScala
       result should have size 2
       val rows = result.groupBy(_.getInt(0)).mapValues(_.head)
       val row0 = rows(1)
@@ -414,7 +414,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       sc.parallelize(col).saveToCassandra(ks, "key_value", SomeColumns("key", "group", "value"))
 
       conn.withSessionDo { session =>
-        val result = session.execute(s"""SELECT * FROM $ks.key_value""").all()
+        val result = session.execute(s"""SELECT * FROM $ks.key_value""").all().asScala
         result should have size 1
         for (row <- result)
           row.getString(2) shouldEqual "foo"
@@ -430,7 +430,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     sc.parallelize(col).saveToCassandra(ks, "udts", SomeColumns("key", "name", "addr"))
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, name, addr FROM $ks.udts""").all()
+      val result = session.execute(s"""SELECT key, name, addr FROM $ks.udts""").all().asScala
       result should have size 1
       for (row <- result) {
         row.getInt(0) shouldEqual 1
@@ -455,7 +455,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     sc.parallelize(col).saveToCassandra(ks, "udts", SomeColumns("key", "name", "addr"))
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, name, addr FROM $ks.udts""").all()
+      val result = session.execute(s"""SELECT key, name, addr FROM $ks.udts""").all().asScala
       result should have size 1
       for (row <- result) {
         row.getInt(0) shouldEqual 1
@@ -472,7 +472,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     sc.parallelize(col).saveToCassandra(ks, "udts", SomeColumns("key", "name", "addr"))
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, name, addr FROM "$ks".udts""").all()
+      val result = session.execute(s"""SELECT key, name, addr FROM "$ks".udts""").all().asScala
       result should have size 1
       for (row <- result) {
         row.getInt(0) shouldEqual 1
@@ -488,7 +488,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     sc.parallelize(col).saveToCassandra(ks, "udts", SomeColumns("key", "name", "addr"))
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, name, addr FROM "$ks".udts""").all()
+      val result = session.execute(s"""SELECT key, name, addr FROM "$ks".udts""").all().asScala
       result should have size 1
       for (row <- result) {
         row.getInt(0) shouldEqual 1
@@ -507,7 +507,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     sc.parallelize(col).saveToCassandra(ks, "tuples", SomeColumns("key", "value"))
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, value FROM $ks.tuples""").all()
+      val result = session.execute(s"""SELECT key, value FROM $ks.tuples""").all().asScala
       result should have size 1
       for (row <- result) {
         row.getInt(0) shouldEqual 1
@@ -524,7 +524,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     sc.parallelize(col).saveToCassandra(ks, "tuples", SomeColumns("key", "value"))
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, value FROM $ks.tuples""").all()
+      val result = session.execute(s"""SELECT key, value FROM $ks.tuples""").all().asScala
       result should have size 1
       for (row <- result) {
         row.getInt(0) shouldEqual 1
@@ -542,7 +542,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     sc.parallelize(col).saveToCassandra(ks, "nested_tuples", SomeColumns("key", "addr"))
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, addr FROM $ks.nested_tuples""").all()
+      val result = session.execute(s"""SELECT key, addr FROM $ks.nested_tuples""").all().asScala
       result should have size 1
       for (row <- result) {
         row.getInt(0) shouldEqual 1
@@ -560,7 +560,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     sc.parallelize(col).saveToCassandra(ks, "nested_tuples", SomeColumns("key", "addr"))
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, addr FROM $ks.nested_tuples""").all()
+      val result = session.execute(s"""SELECT key, addr FROM $ks.nested_tuples""").all().asScala
       for (row <- result) {
         row.getUdtValue(1).getTupleValue(1).getInt(0) shouldEqual 1
         row.getUdtValue(1).getTupleValue(1).getInt(1) shouldEqual 2
@@ -572,7 +572,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     val col = Seq(1, 2, 3, 4, 5).map(Tuple1.apply)
     sc.parallelize(col).saveToCassandra(ks, "single_column", SomeColumns("pk"))
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM $ks.single_column""").all()
+      val result = session.execute(s"""SELECT * FROM $ks.single_column""").all().asScala
       result should have size 5
       result.map(_.getInt(0)).toSet should be (Set(1, 2, 3, 4, 5))
     }
@@ -593,7 +593,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     verifyKeyValueTable("key_value")
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT TTL(value) FROM $ks.key_value""").all()
+      val result = session.execute(s"""SELECT TTL(value) FROM $ks.key_value""").all().asScala
       result should have size 3
       result.foreach(_.getInt(0) should be > 50)
       result.foreach(_.getInt(0) should be <= 100)
@@ -609,7 +609,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     verifyKeyValueTable("key_value")
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT WRITETIME(value) FROM $ks.key_value""").all()
+      val result = session.execute(s"""SELECT WRITETIME(value) FROM $ks.key_value""").all().asScala
       result should have size 3
       result.foreach(_.getLong(0) should be (ts * 1000L))
     }
@@ -623,7 +623,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     verifyKeyValueTable("key_value")
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, TTL(value) FROM $ks.key_value""").all()
+      val result = session.execute(s"""SELECT key, TTL(value) FROM $ks.key_value""").all().asScala
       result should have size 3
       result.foreach(row => {
         row.getInt(1) should be > (100 * row.getInt(0) - 50)
@@ -641,7 +641,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     verifyKeyValueTable("key_value")
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, WRITETIME(value) FROM $ks.key_value""").all()
+      val result = session.execute(s"""SELECT key, WRITETIME(value) FROM $ks.key_value""").all().asScala
       result should have size 3
       result.foreach(row => {
         row.getLong(1) should be (ts * 1000L + row.getInt(0) * 100L)
@@ -660,7 +660,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     verifyKeyValueTable("key_value")
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, TTL(value) FROM $ks.key_value""").all()
+      val result = session.execute(s"""SELECT key, TTL(value) FROM $ks.key_value""").all().asScala
       result should have size 3
       result.foreach(row => {
         row.getInt(1) should be > (100 * row.getInt(0) - 50)
@@ -683,7 +683,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     verifyKeyValueTable("key_value")
 
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT key, WRITETIME(value) FROM $ks.key_value""").all()
+      val result = session.execute(s"""SELECT key, WRITETIME(value) FROM $ks.key_value""").all().asScala
       result should have size 3
       result.foreach(row => {
         row.getLong(1) should be (ts * 1000L + row.getInt(0) * 100L)
@@ -711,7 +711,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
         "map_tuple",
         SomeColumns(("a" as "_2"), ("c" as "_1")))
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM $ks.map_tuple""").all()
+      val result = session.execute(s"""SELECT * FROM $ks.map_tuple""").all().asScala
       result should have size 1
       val row = result(0)
       row.getString("a") should be ("a")
@@ -726,7 +726,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
         "map_tuple",
         SomeColumns(("a" as "_2"),("b" as "_3"), ("c" as "_1")))
     conn.withSessionDo { session =>
-      val result = session.execute(s"""SELECT * FROM $ks.map_tuple""").all()
+      val result = session.execute(s"""SELECT * FROM $ks.map_tuple""").all().asScala
       result should have size 1
       val row = result(0)
       row.getString("a") should be ("a")
@@ -771,7 +771,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     verifyKeyValueTable("key_value")
   }
 
-  it should "be able to append and prepend elements to a C* list" in {
+  it should "be able to.append and.prepend elements to a C* list" in {
 
     val listElements = sc.parallelize(Seq(
       (1, Vector("One")),
@@ -783,8 +783,8 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       (1, Vector("PrependTwo")),
       (1, Vector("PrependThree"))))
 
-    listElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "lcol" append))
-    prependElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "lcol" prepend))
+    listElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "lcol".append))
+    prependElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "lcol".prepend))
 
     val testList = sc.cassandraTable[(Seq[String])](ks, "collections_mod")
       .where("key = 1")
@@ -798,12 +798,12 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       (2, Vector("One")),
       (2, Vector("Two")),
       (2, Vector("Three"))))
-    listElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "lcol" append))
+    listElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "lcol".append))
 
     sc.parallelize(Seq(
       (2, Vector("Two")),
       (2, Vector("Three"))))
-      .saveToCassandra(ks, "collections_mod", SomeColumns("key", "lcol" remove))
+      .saveToCassandra(ks, "collections_mod", SomeColumns("key", "lcol".remove))
 
     val testList = sc.cassandraTable[(Seq[String])](ks, "collections_mod")
       .where("key = 2")
@@ -817,7 +817,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       (3, Set("One")),
       (3, Set("Two")),
       (3, Set("Three"))))
-    setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "scol" append))
+    setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "scol".append))
     val testSet = sc.cassandraTable[(Set[String])](ks, "collections_mod")
       .where("key = 3")
       .select("scol").take(1)(0)
@@ -825,15 +825,15 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     testSet should contain allOf("One", "Two", "Three")
   }
 
-  it should "be able to remove elements from a C* set" in {
+  it should "be able to.remove elements from a C* set" in {
     val setElements = sc.parallelize(Seq(
       (4, Set("One")),
       (4, Set("Two")),
       (4, Set("Three"))))
-    setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "scol" append))
+    setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "scol".append))
 
     sc.parallelize(Seq((4, Set("Two")), (4, Set("Three"))))
-      .saveToCassandra(ks, "collections_mod", SomeColumns("key", "scol" remove))
+      .saveToCassandra(ks, "collections_mod", SomeColumns("key", "scol".remove))
 
     val testSet = sc.cassandraTable[(Set[String])](ks, "collections_mod")
       .where("key = 4")
@@ -848,7 +848,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
       (5, Map("One" -> "One")),
       (5, Map("Two" -> "Two")),
       (5, Map("Three" -> "Three"))))
-    setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "mcol" append))
+    setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "mcol".append))
 
     val testMap = sc.cassandraTable[(Map[String, String])](ks, "collections_mod")
       .where("key = 5")
@@ -861,29 +861,28 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     conn.withSessionDo(_.execute(s"""TRUNCATE $ks.key_value"""))
     val col = Seq((1, 1L, "value1"), (2, 2L, "value2"), (3, 3L, "value3"))
     val e = intercept[IllegalArgumentException] {
-      sc.parallelize(col).saveToCassandra(ks, "key_value", SomeColumns("key", "group"
-        overwrite, "value"))
+      sc.parallelize(col).saveToCassandra(ks, "key_value", SomeColumns("key", "group".overwrite, "value"))
     }
     e.getMessage should include("group")
   }
 
-  it should "throw an exception if you try to remove values from a map" in {
+  it should "throw an exception if you try to.remove values from a map" in {
     val setElements = sc.parallelize(Seq(
       (5, Map("One" -> "One")),
       (5, Map("Two" -> "Two")),
       (5, Map("Three" -> "Three"))))
     val e = intercept[IllegalArgumentException] {
-      setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "mcol" remove))
+      setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "mcol".remove))
     }
     e.getMessage should include("mcol")
   }
 
-  it should "throw an exception if you prepend anything but a list" in {
+  it should "throw an exception if you.prepend anything but a list" in {
     val setElements = sc.parallelize(Seq(
       (5, Map("One" -> "One"), Set("One"))))
     val e = intercept[IllegalArgumentException] {
-      setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "mcol" prepend,
-        "scol" prepend))
+      setElements.saveToCassandra(ks, "collections_mod", SomeColumns("key", "mcol".prepend,
+        "scol".prepend))
     }
     e.getMessage should include("mcol")
     e.getMessage should include("scol")
@@ -916,13 +915,13 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     results should contain theSameElementsAs Seq((1, "new"), (2, "new"))
   }
 
-  "Idempotent Queries" should "not be used with list append" in {
-    val listAppend = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "lcol" append), WriteConf.fromSparkConf(sc.getConf))
+  "Idempotent Queries" should "not be used with list.append" in {
+    val listAppend = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "lcol".append), WriteConf.fromSparkConf(sc.getConf))
     listAppend.isIdempotent should be (false)
   }
 
-  it should "not be used with list prepend" in {
-    val listPrepend = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "lcol" prepend), WriteConf.fromSparkConf(sc.getConf))
+  it should "not be used with list.prepend" in {
+    val listPrepend = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "lcol".prepend), WriteConf.fromSparkConf(sc.getConf))
     listPrepend.isIdempotent should be (false)
   }
 
@@ -942,11 +941,11 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
   }
 
   it should "be used with collections that aren't lists" in {
-    val listOverwrite = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "lcol" overwrite), WriteConf.fromSparkConf(sc.getConf))
+    val listOverwrite = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "lcol".overwrite), WriteConf.fromSparkConf(sc.getConf))
     listOverwrite.isIdempotent should be (true)
-    val setOverwrite = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "scol" overwrite), WriteConf.fromSparkConf(sc.getConf))
+    val setOverwrite = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "scol".overwrite), WriteConf.fromSparkConf(sc.getConf))
     setOverwrite.isIdempotent should be (true)
-    val mapOverwrite = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "mcol" overwrite), WriteConf.fromSparkConf(sc.getConf))
+    val mapOverwrite = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "mcol".overwrite), WriteConf.fromSparkConf(sc.getConf))
     mapOverwrite.isIdempotent should be (true)
   }
 

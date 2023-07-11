@@ -155,7 +155,7 @@ class CassandraCatalog extends CatalogPlugin
 
     val ksMeta: mutable.Map[String, String] = changes.foldLeft(loadNamespaceMetadata(namespace).asScala) {
       case (metadata: mutable.Map[String, String], setProperty: SetProperty) =>
-        metadata + (setProperty.property() -> setProperty.value)
+        metadata.clone() += (setProperty.property() -> setProperty.value)
       case (metadata: mutable.Map[String, String], removeProperty: RemoveProperty) =>
         metadata - removeProperty.property()
       case (_, other) => throw new CassandraCatalogException(s"Unable to handle alter namespace operation: ${other.getClass.getSimpleName}")
@@ -186,7 +186,7 @@ class CassandraCatalog extends CatalogPlugin
   override def loadNamespaceMetadata(namespace: Array[String]): java.util.Map[String, String] = {
     val ksMetadata = getKeyspaceMeta(connector, namespace)
 
-    (ksMetadata.getReplication.asScala + (DurableWrites -> ksMetadata.isDurableWrites.toString))
+    (ksMetadata.getReplication.asScala.clone() += (DurableWrites -> ksMetadata.isDurableWrites.toString))
       .asJava
   }
 

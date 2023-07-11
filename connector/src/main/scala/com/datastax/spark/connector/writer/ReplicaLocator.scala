@@ -10,8 +10,8 @@ import com.datastax.spark.connector.util.DriverUtil._
 import com.datastax.spark.connector.util.{DriverUtil, Logging, tableFromCassandra}
 import com.datastax.spark.connector.util.PatitionKeyTools._
 
-import scala.collection.JavaConversions._
 import scala.collection._
+import scala.collection.JavaConverters._
 
 /**
  * A utility class for determining the Replica Set (Ip Addresses) of a particular Cassandra Row. Used
@@ -42,7 +42,7 @@ class ReplicaLocator[T] private(
         val clusterMetadata = session.getMetadata
         data.map { row =>
           val hosts = tokenMap
-            .getReplicas(CqlIdentifier.fromInternal(keyspaceName), QueryUtils.getRoutingKeyOrError(boundStmtBuilder.bind(row).stmt))
+            .getReplicas(CqlIdentifier.fromInternal(keyspaceName), QueryUtils.getRoutingKeyOrError(boundStmtBuilder.bind(row).stmt)).asScala
             .map(node => DriverUtil.toAddress(node)
               .getOrElse(throw new IllegalStateException(s"Unable to determine Node Broadcast Address of $node")))
             .map(_.getAddress)

@@ -15,9 +15,9 @@ import org.apache.spark.rdd.{PartitionCoalescer, RDD}
 import org.apache.spark.{Partition, Partitioner, SparkContext, TaskContext}
 
 import java.io.IOException
-import scala.collection.JavaConversions._
 import scala.language.existentials
 import scala.reflect.ClassTag
+import scala.collection.JavaConverters._
 
 
 /** RDD representing a Table Scan of A Cassandra table.
@@ -186,7 +186,7 @@ class CassandraTableScanRDD[R] private[connector](
     val selectedColumnNames = columns.selectFrom(tableDef).map(_.columnName).toSet
     val partitionKeyColumnNames = PartitionKeyColumns.selectFrom(tableDef).map(_.columnName).toSet
 
-    if (selectedColumnNames.containsAll(partitionKeyColumnNames)) {
+    if (selectedColumnNames.asJava.containsAll(partitionKeyColumnNames.asJava)) {
       val partitioner = partitionGenerator.partitioner[K](columns)
       logDebug(
         s"""Made partitioner ${partitioner} for $this""".stripMargin)

@@ -6,7 +6,7 @@ import com.datastax.oss.driver.api.core.metadata.Metadata
 import com.datastax.spark.connector.util.DriverUtil.toName
 import org.apache.commons.lang3.StringUtils
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 object NameTools {
 
@@ -44,7 +44,7 @@ object NameTools {
   def getSuggestions(clusterMetadata: Metadata, keyspace: String): Option[Suggestions] = {
     val keyspaceScores = clusterMetadata
       .getKeyspaces
-      .values()
+      .values().asScala
       .toSeq
       .map(ks =>
         (toName(ks.getName), StringUtils.getJaroWinklerDistance(toName(ks.getName).toLowerCase(Locale.ROOT), keyspace.toLowerCase(Locale.ROOT))))
@@ -74,12 +74,12 @@ object NameTools {
 
     val keyspaceScores = clusterMetadata
       .getKeyspaces
-      .values()
+      .values().asScala
       .toSeq
       .map(ks =>
       (ks, StringUtils.getJaroWinklerDistance(toName(ks.getName).toLowerCase(Locale.ROOT), keyspace.toLowerCase(Locale.ROOT))))
 
-    val ktScores = for ((ks, ksScore) <- keyspaceScores; (_, t) <- (ks.getTables ++ ks.getViews)) yield {
+    val ktScores = for ((ks, ksScore) <- keyspaceScores; (_, t) <- (ks.getTables.asScala ++ ks.getViews.asScala)) yield {
       val tScore = StringUtils.getJaroWinklerDistance(toName(t.getName).toLowerCase(Locale.ROOT), table.toLowerCase(Locale.ROOT))
       (toName(ks.getName), toName(t.getName), ksScore, tScore)
     }

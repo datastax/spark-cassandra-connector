@@ -74,5 +74,5 @@ class BucketingRangeIndex[R, T](ranges: Seq[R])
 
   /** Finds rangesContaining containing given point in O(1) time. */
   def rangesContaining(point: T): IndexedSeq[R] =
-    table(bucket(point)).filter(bounds.contains(_, point))
+    table(bucket(point)).filter(bounds.contains(_, point)).toIndexedSeq
 }

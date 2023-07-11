@@ -32,7 +32,7 @@ public class PairRDDJavaFunctions<K, V> extends RDDJavaFunctions<Tuple2<K, V>> {
         ClassTag<Tuple2<K, Collection<V>>> tupleClassTag = classTag(Tuple2.class);
         ClassTag<Collection<V>> vClassTag = classTag(Collection.class);
         RDD<Tuple2<K, Collection<V>>> newRDD = pairRDDFunctions.spanByKey()
-                .map(JavaApiHelper.<K, V, Seq<V>>valuesAsJavaCollection(), tupleClassTag);
+                .map(JavaApiHelper.valuesAsJavaCollection(), tupleClassTag);
 
         return new JavaPairRDD<>(newRDD, keyClassTag, vClassTag);
     }

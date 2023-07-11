@@ -44,13 +44,13 @@ class BlobTypeTest extends AbstractTypeTest[Array[Byte], ByteBuffer] with Defaul
       val resSet = row.getSet("set1", classOf[ByteBuffer]).asScala.map(Bytes.toHexString(_))
       val resList = row.getList("list1", classOf[ByteBuffer]).asScala.map(Bytes.toHexString(_))
       val resMap1 = row.getMap("map1", classOf[String], classOf[ByteBuffer]).asScala
-        .mapValues(Bytes.toHexString(_))
+        .map{ case (k,v) => (k, Bytes.toHexString(v)) }
       val resMap2 = row.getMap("map2", classOf[ByteBuffer], classOf[String]).asScala
         .map{ case (k,v) => (Bytes.toHexString(k), v)}
 
       resSet should contain theSameElementsAs bufferTypeSet.map(Bytes.toHexString(_))
       resList should contain theSameElementsAs bufferTypeSet.toList.map(Bytes.toHexString(_))
-      resMap1 should contain theSameElementsAs bufferTypeMap1.mapValues( Bytes.toHexString(_))
+      resMap1 should contain theSameElementsAs bufferTypeMap1.map{ case (k, v) => (k, Bytes.toHexString(v))}
       resMap2 should contain theSameElementsAs bufferTypeMap2.map{ case (k,v) => (Bytes.toHexString(k), v)}
     }
   }

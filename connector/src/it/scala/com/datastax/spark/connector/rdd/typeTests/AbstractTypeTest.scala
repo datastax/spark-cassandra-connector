@@ -354,8 +354,8 @@ abstract class AbstractTypeTest[TestType: ClassTag, DriverType <: AnyRef : Class
     val javaSet: java.util.Set[DriverType] = scalaSet.asJava
     val javaList: java.util.List[DriverType] = scalaSet.toList.asJava
 
-    val javaMap1: java.util.Map[String, DriverType] = typeMap.mapValues(value =>
-      convertToDriverInsertable(value)).asJava
+    val javaMap1: java.util.Map[String, DriverType] = typeMap.map{ case (key ,value) =>
+      (key, convertToDriverInsertable(value))}.toMap.asJava
     val javaMap2: java.util.Map[DriverType, String] = typeReverseMap.map { case (key, value) =>
       (convertToDriverInsertable(key), value)
     }.asJava

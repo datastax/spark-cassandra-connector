@@ -9,7 +9,7 @@ import com.datastax.spark.connector.util.schemaFromCassandra
 import com.datastax.spark.connector.writer.RowWriterFactory
 import com.datastax.spark.connector.{PartitionKeyColumns, SparkCassandraITFlatSpecBase}
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.Future
 
 class TokenGeneratorSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
@@ -44,7 +44,7 @@ class TokenGeneratorSpec extends SparkCassandraITFlatSpecBase with DefaultCluste
   }
 
   val simpleTokenMap: Map[SimpleKey, Token] = conn.withSessionDo { session =>
-    val resultSet = session.execute(s"SELECT key, TOKEN(key) FROM $ks.simple").all()
+    val resultSet = session.execute(s"SELECT key, TOKEN(key) FROM $ks.simple").all().asScala
     resultSet.map(row => SimpleKey(row.getInt("key")) -> row.getToken(1)).toMap
   }
 
@@ -52,6 +52,7 @@ class TokenGeneratorSpec extends SparkCassandraITFlatSpecBase with DefaultCluste
     val resultSet = session
       .execute(s"SELECT key1, key2, key3, TOKEN(key1, key2, key3) FROM $ks.complex")
       .all()
+      .asScala
 
     resultSet.map(row =>
       ComplexKey(row.getInt("key1"), row.getInt("key2"), row.getString("key3")) ->

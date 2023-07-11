@@ -11,6 +11,7 @@ import com.datastax.spark.connector.util.Logging
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.PredicateOps.FilterOps
 import org.apache.spark.sql.sources.{EqualTo, Filter, IsNotNull}
+import scala.collection.compat._
 
 
 /**
@@ -76,7 +77,7 @@ object DsePredicateRules extends CassandraPredicateRules with Logging {
     val indexColumns = saiIndexes(table).map(_.targetColumn)
     val pushedEqualityPredicates = predicates.handledByCassandra.collect {
       case f if FilterOps.isEqualToPredicate(f) => FilterOps.columnName(f)
-    }.to[collection.mutable.Set]
+    }.to(collection.mutable.Set)
 
     val (handledByCassandra, handledBySpark) = predicates.handledBySpark.partition { filter =>
       lazy val columnName = FilterOps.columnName(filter)

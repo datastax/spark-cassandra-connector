@@ -3,7 +3,6 @@ package com.datastax.spark.connector.rdd
 import java.io.IOException
 import java.time.{Instant, LocalDate, ZoneId, ZonedDateTime}
 import java.util.Date
-
 import com.datastax.oss.driver.api.core.DefaultProtocolVersion._
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption
 import com.datastax.oss.driver.api.core.cql.SimpleStatement
@@ -15,8 +14,9 @@ import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorC
 import com.datastax.spark.connector.mapper.{DefaultColumnMapper, JavaBeanColumnMapper, JavaTestBean, JavaTestUDTBean}
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
 import com.datastax.spark.connector.types.{CassandraOption, TypeConverter}
+import com.datastax.spark.connector.util.RuntimeUtil
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.Future
 import scala.reflect.runtime.universe.typeTag
 
@@ -730,19 +730,19 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
     // compute a few RDDs so the thread pools get initialized
     // using parallel range, to initialize parallel collections fork-join-pools
     val iterationCount = 256
-    for (i <- (1 to iterationCount).par)
+    for (i <- RuntimeUtil.toParallelIterable(1 to iterationCount).par)
       sc.cassandraTable(ks, "key_value").collect()
 
     // subsequent computations of RDD should reuse already created thread pools,
     // not instantiate new ones
     val startThreadCount = threadCount()
-    val oldThreads = Thread.getAllStackTraces.keySet().toSet
+    val oldThreads = Thread.getAllStackTraces.keySet().asScala.toSet
 
-    for (i <- (1 to iterationCount).par)
+    for (i <- RuntimeUtil.toParallelIterable(1 to iterationCount).par)
       sc.cassandraTable(ks, "key_value").collect()
 
     val endThreadCount = threadCount()
-    val newThreads = Thread.getAllStackTraces.keySet().toSet
+    val newThreads = Thread.getAllStackTraces.keySet().asScala.toSet
     val createdThreads = newThreads -- oldThreads
     println("Start thread count: " + startThreadCount)
     println("End thread count: " + endThreadCount)

@@ -9,8 +9,8 @@ import com.datastax.spark.connector.util._
 import com.datastax.spark.connector.writer.RowWriterFactory
 import org.apache.spark.{Partition, Partitioner}
 
-import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
+import scala.collection.JavaConverters._
 
 
 case class ReplicaPartition(index: Int, endpoints: Array[String]) extends EndpointPartition
@@ -73,7 +73,7 @@ implicit
         val token = tokenGenerator.getTokenFor(key)
         val tokenHash = Math.abs(token.hashCode())
         val replicas = tokenMap
-          .getReplicas(_keyspace, token)
+          .getReplicas(_keyspace, token).asScala
           .map(n => DriverUtil.toAddress(n).get.getAddress)
 
         val replicaSetInDC = (hostSet & replicas).toVector

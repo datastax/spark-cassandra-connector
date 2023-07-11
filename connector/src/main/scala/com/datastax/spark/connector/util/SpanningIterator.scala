@@ -26,6 +26,6 @@ class SpanningIterator[K, T](iterator: Iterator[T], f: T => K) extends Iterator[
     val key = f(items.head)
     val buffer = new ArrayBuffer[T]
     items.appendWhile(r => f(r) == key, buffer)
-    (key, buffer)
+    (key, buffer.toSeq)
   }
 }
