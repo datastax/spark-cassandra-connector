@@ -5,7 +5,7 @@
 ### Getting Started
 
 The Spark Cassandra Connector is built using sbt. There is a premade
-launching script for sbt so it is unneccessary to download it. To invoke
+launching script for sbt, so it is unnecessary to download it. To invoke
 this script you can run `./sbt/sbt` from a clone of this repository.
 
 For information on setting up your clone please follow the [Github 
@@ -48,7 +48,7 @@ datastax	git@github.com:datastax/spark-cassandra-connector.git (push)
 ...
 ```
 
-Here is how the work should look like.
+Here is what the work should look like.
 
 ```shell
 git fetch datastax
@@ -108,7 +108,7 @@ In order to limit the number of test groups running simultaneously use the
 
 ### Set Cassandra Test Target
 Our CI Build runs through the Datastax Infrastructure and tests on all the builds
-listed in build.yaml. In addition the _test-support_ module supports Cassandra
+listed in build.yaml. In addition, the _test-support_ module supports Cassandra
 or other CCM Compatible installations.
 
 If using SBT you can set

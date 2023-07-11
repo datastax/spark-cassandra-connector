@@ -62,9 +62,6 @@ scalaReleaseVersion := {
   }
 }
 
-
-
-
 lazy val commonSettings = Seq(
   // dependency updates check
   dependencyUpdatesFailBuild := true,

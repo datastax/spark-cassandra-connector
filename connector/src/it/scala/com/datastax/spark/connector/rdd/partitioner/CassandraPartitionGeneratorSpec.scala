@@ -69,7 +69,7 @@ class CassandraPartitionGeneratorSpec extends SparkCassandraITFlatSpecBase with 
     testPartitionCount(10000, 9000, 11000)
   }
 
-  it should "round robing partition with different endpoints" in {
+  it should "round robin partition with different endpoints" in {
     val table = schemaFromCassandra(conn, Some(ks), Some("empty")).tables.head
     val partitioner = new MockCassandraPartitionGenerator(conn, table, 12)
     val partitions = partitioner.partitions
