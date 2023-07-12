@@ -54,14 +54,6 @@ lazy val assemblySettings = Seq(
   },
 )
 
-val scalaReleaseVersion = SettingKey[Int]("scalaReleaseVersion")
-scalaReleaseVersion := {
-  val v = scalaVersion.value
-  CrossVersion.partialVersion(v).map(_._1.toInt).getOrElse {
-    throw new RuntimeException(s"could not get Scala release version from $v")
-  }
-}
-
 lazy val commonSettings = Seq(
   // dependency updates check
   dependencyUpdatesFailBuild := true,
@@ -70,16 +62,6 @@ lazy val commonSettings = Seq(
   parallelExecution := true,
   testForkedParallel := false,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
-  libraryDependencies ++= {
-    CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, scalaMajor)) if scalaMajor == 13 =>
-        Seq(
-          "org.scala-lang.modules" %% "scala-collection-compat" % "2.11.0",
-          "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"
-        )
-      case _ => Seq("org.scala-lang.modules" %% "scala-collection-compat" % "2.11.0")
-    }
-  }
 )
 
 
@@ -127,6 +109,7 @@ lazy val connector = (project in file("connector"))
     Global / concurrentRestrictions := Seq(Tags.limitAll(Testing.parallelTasks)),
 
     libraryDependencies ++= Dependencies.Spark.dependencies
+      ++ Dependencies.Compatibility.dependencies(scalaVersion.value)
       ++ Dependencies.TestConnector.dependencies
       ++ Dependencies.Jetty.dependencies,
 
@@ -143,7 +126,8 @@ lazy val testSupport = (project in file("test-support"))
   .settings(
     crossScalaVersions := supportedScalaVersions,
     name := "spark-cassandra-connector-test-support",
-    libraryDependencies ++= Dependencies.TestSupport.dependencies
+    libraryDependencies ++= Dependencies.Compatibility.dependencies(scalaVersion.value)
+      ++ Dependencies.TestSupport.dependencies
   )
 
 lazy val driver = (project in file("driver"))
@@ -153,7 +137,8 @@ lazy val driver = (project in file("driver"))
     crossScalaVersions := supportedScalaVersions,
     name := "spark-cassandra-connector-driver",
     assembly /test := {},
-    libraryDependencies ++= Dependencies.Driver.dependencies
+    libraryDependencies ++= Dependencies.Compatibility.dependencies(scalaVersion.value)
+      ++ Dependencies.Driver.dependencies
       ++ Dependencies.TestDriver.dependencies
       :+ ("org.scala-lang" % "scala-reflect" % scalaVersion.value)
   )

@@ -79,7 +79,20 @@ object Dependencies
     val commonsLang3 = "org.apache.commons" % "commons-lang3" % Versions.CommonsLang3
     val paranamer = "com.thoughtworks.paranamer" % "paranamer" % Versions.Paranamer
 
+
     val dependencies = Seq(driverCore, driverMapper, commonsLang3, paranamer)
+  }
+
+  object Compatibility {
+    val scalaCompat = "org.scala-lang.modules" %% "scala-collection-compat" % Versions.ScalaCompat
+    val parallelCollections = "org.scala-lang.modules" %% "scala-parallel-collections" % Versions.ParallelCollections
+
+    def dependencies(version: String): Seq[ModuleID] = {
+      CrossVersion.partialVersion(version) match {
+        case Some((2, scalaMajor)) if scalaMajor == 13 => Seq(scalaCompat, parallelCollections)
+        case _ => Seq(scalaCompat)
+      }
+    }
   }
 
   object TestDriver {
