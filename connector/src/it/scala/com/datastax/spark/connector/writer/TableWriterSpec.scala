@@ -771,7 +771,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     verifyKeyValueTable("key_value")
   }
 
-  it should "be able to.append and.prepend elements to a C* list" in {
+  it should "be able to append and prepend elements to a C* list" in {
 
     val listElements = sc.parallelize(Seq(
       (1, Vector("One")),
@@ -825,7 +825,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     testSet should contain allOf("One", "Two", "Three")
   }
 
-  it should "be able to.remove elements from a C* set" in {
+  it should "be able to remove elements from a C* set" in {
     val setElements = sc.parallelize(Seq(
       (4, Set("One")),
       (4, Set("Two")),
@@ -866,7 +866,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     e.getMessage should include("group")
   }
 
-  it should "throw an exception if you try to.remove values from a map" in {
+  it should "throw an exception if you try to remove values from a map" in {
     val setElements = sc.parallelize(Seq(
       (5, Map("One" -> "One")),
       (5, Map("Two" -> "Two")),
@@ -877,7 +877,7 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     e.getMessage should include("mcol")
   }
 
-  it should "throw an exception if you.prepend anything but a list" in {
+  it should "throw an exception if you prepend anything but a list" in {
     val setElements = sc.parallelize(Seq(
       (5, Map("One" -> "One"), Set("One"))))
     val e = intercept[IllegalArgumentException] {
@@ -915,12 +915,12 @@ class TableWriterSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     results should contain theSameElementsAs Seq((1, "new"), (2, "new"))
   }
 
-  "Idempotent Queries" should "not be used with list.append" in {
+  "Idempotent Queries" should "not be used with list append" in {
     val listAppend = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "lcol".append), WriteConf.fromSparkConf(sc.getConf))
     listAppend.isIdempotent should be (false)
   }
 
-  it should "not be used with list.prepend" in {
+  it should "not be used with list prepend" in {
     val listPrepend = TableWriter(conn, ks, "collections_mod", SomeColumns("key", "lcol".prepend), WriteConf.fromSparkConf(sc.getConf))
     listPrepend.isIdempotent should be (false)
   }
