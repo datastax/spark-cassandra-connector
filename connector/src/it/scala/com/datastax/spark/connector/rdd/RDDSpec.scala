@@ -11,10 +11,10 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.rdd.partitioner.EndpointPartition
 import com.datastax.spark.connector.writer.AsyncExecutor
-import spire.ClassTag
 
 import scala.jdk.CollectionConverters._
 import scala.concurrent.Future
+import scala.reflect.ClassTag
 
 case class KVRow(key: Int)
 
