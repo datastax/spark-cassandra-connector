@@ -1,2 +1,2 @@
-Cassandra connector for Apache Spark.
+DataStax Connector for Apache Spark to Apache Cassandra.
 See documentation of package [[com.datastax.spark.connector]].
