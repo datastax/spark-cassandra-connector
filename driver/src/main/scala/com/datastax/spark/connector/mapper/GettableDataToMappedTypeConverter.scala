@@ -175,7 +175,7 @@ class GettableDataToMappedTypeConverter[T : TypeTag : ColumnMapper](
       for ((s, _) <- columnMap.setters)
         yield (s, ReflectionUtil.methodParamTypes(targetType, s).head)
     val setterColumnTypes: Map[String, ColumnType[_]] =
-      columnMap.setters.map{case (k, v) => (k, columnType(v))}.toMap
+      columnMap.setters.mapValues(columnType).toMap
     for (setterName <- setterParamTypes.keys) yield {
       val ct = setterColumnTypes(setterName)
       val pt = setterParamTypes(setterName)
