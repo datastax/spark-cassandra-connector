@@ -1,4 +1,6 @@
-# Spark Cassandra Connector
+# DataStax Connector for Apache Spark to Apache Cassandra
+
+*Lightning-fast cluster computing with Apache Spark&trade; and Apache Cassandra&reg;.*
 
 [![CI](https://github.com/datastax/spark-cassandra-connector/actions/workflows/main.yml/badge.svg?branch=master)](https://github.com/datastax/spark-cassandra-connector/actions?query=branch%3Amaster)
 
@@ -6,13 +8,11 @@
 
 | What       | Where                                                                                                                                                                                                                                                                                                                                 |
 | ---------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Community  | Chat with us at [Datastax and Cassandra Q&A](https://community.datastax.com/index.html)                                                                                                                                                                                                                                               |
-| Scala Docs | Most Recent Release (3.4.0): [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.4.0/connector/com/datastax/spark/connector/index.html), [Spark-Cassandra-Connector-Driver](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.4.0/driver/com/datastax/spark/connector/index.html) |
+| Community  | Chat with us at [Apache Cassandra](https://cassandra.apache.org/_/community.html#discussions)                                                                                                                                                                                                                                               |
+| Scala Docs | Most Recent Release (3.4.0): [Connector API docs](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.4.0/connector/com/datastax/spark/connector/index.html), [Connector Driver docs](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.4.0/driver/com/datastax/spark/connector/index.html) |
 | Latest Production Release | [3.4.0](https://search.maven.org/artifact/com.datastax.spark/spark-cassandra-connector_2.12/3.4.0/jar)                                                                                                                                                                                                                                |
  
 ## Features
-
-*Lightning-fast cluster computing with Apache Spark&trade; and Apache Cassandra&reg;.*
 
 This library lets you expose Cassandra tables as Spark RDDs and Datasets/DataFrames, write
 Spark RDDs and Datasets/DataFrames to Cassandra tables, and execute arbitrary CQL queries

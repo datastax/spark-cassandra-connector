@@ -9,7 +9,7 @@ import org.apache.spark.sql.{DataFrame, Dataset, Encoder, Row}
 import scala.language.implicitConversions
 
 /**
- * The root package of Cassandra connector for Apache Spark.
+ * The root package of the DataStax Connector for Apache Spark to Apache Cassandra.
  * Offers handy implicit conversions that add Cassandra-specific methods to
  * [[org.apache.spark.SparkContext SparkContext]] and [[org.apache.spark.rdd.RDD RDD]].
  *

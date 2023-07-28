@@ -18,7 +18,7 @@ import java.util.Objects;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.allColumns;
 
 /**
- * Java API wrapper over either {@code RDD} or {@code DStream} to provide Spark Cassandra Connector functionality.
+ * Java API wrapper over either {@code RDD} or {@code DStream} for the DataStax Connector for Apache Spark to Apache Cassandra.
  *
  * <p>To obtain an instance of the specific wrapper, use one of the factory methods in {@link
  * com.datastax.spark.connector.japi.CassandraJavaUtil} class.</p>
