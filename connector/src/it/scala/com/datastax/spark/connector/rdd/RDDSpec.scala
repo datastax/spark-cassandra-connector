@@ -1,7 +1,6 @@
 package com.datastax.spark.connector.rdd
 
 import java.lang.{Long => JLong}
-
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption._
 import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, BoundStatement}
 import com.datastax.oss.driver.api.core.{DefaultConsistencyLevel, DefaultProtocolVersion}
@@ -13,7 +12,9 @@ import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.rdd.partitioner.EndpointPartition
 import com.datastax.spark.connector.writer.AsyncExecutor
 
+import scala.jdk.CollectionConverters._
 import scala.concurrent.Future
+import scala.reflect.ClassTag
 
 case class KVRow(key: Int)
 
@@ -139,7 +140,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
     }
   }
 
-  def checkLeftSide[T, S](leftSideSource: Array[T], result: Array[(T, S)]) = {
+  def checkLeftSide[T, S](leftSideSource: Array[T], result: Array[(T, S)])(implicit classTag: ClassTag[T]) = {
     markup("Checking LeftSide")
     val leftSideResults = result.map(_._1)
     for (element <- leftSideSource) {

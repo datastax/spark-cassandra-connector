@@ -49,14 +49,14 @@ class BasicCassandraPredicatePushDown[Predicate : PredicateOps](
   private val eqPredicatesByName =
     eqPredicates
       .groupBy(Predicates.columnName)
-      .mapValues(_.take(1))       // don't push down more than one EQ predicate for the same column
+      .map{ case (k, v) => (k, v.take(1))}
       .withDefaultValue(Set.empty)
 
   private val inPredicates = singleColumnPredicates.filter(Predicates.isInPredicate)
   private val inPredicatesByName =
     inPredicates
       .groupBy(Predicates.columnName)
-      .mapValues(_.take(1))      // don't push down more than one IN predicate for the same column
+      .map{ case (k, v) => (k, v.take(1))} // don't push down more than one IN predicate for the same column
       .withDefaultValue(Set.empty)
 
   private val rangePredicates = singleColumnPredicates.filter(Predicates.isRangePredicate)

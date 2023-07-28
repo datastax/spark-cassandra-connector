@@ -146,7 +146,7 @@ object CassandraRowMetadata {
   }
 
   private def fromColumnDefs(columnNames: IndexedSeq[String], columnDefs: ColumnDefinitions, registry: CodecRegistry): CassandraRowMetadata = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     val scalaColumnDefs = columnDefs.asScala.toList
     val rsColumnNames = scalaColumnDefs.map(c => toName(c.getName))
     val codecs = scalaColumnDefs.map(col => registry.codecFor(col.getType))

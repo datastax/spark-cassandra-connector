@@ -26,7 +26,8 @@ import org.scalatest._
 import org.scalatest.concurrent.Eventually._
 import org.scalatest.time.{Seconds, Span}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
+import scala.collection.compat._
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.Try
@@ -200,8 +201,8 @@ trait SparkCassandraITSpecBase
     Await.result(Future.sequence(units), Duration.Inf)
   }
 
-  def awaitAll[T](units: TraversableOnce[Future[T]]): TraversableOnce[T] = {
-    Await.result(Future.sequence(units), Duration.Inf)
+  def awaitAll[T](units: IterableOnce[Future[T]]): IterableOnce[T] = {
+    Await.result(Future.sequence(units.iterator), Duration.Inf)
   }
 
   def keyspaceCql(name: String = ks) =

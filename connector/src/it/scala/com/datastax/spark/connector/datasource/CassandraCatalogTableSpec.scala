@@ -4,7 +4,7 @@ import com.datastax.oss.driver.api.core.CqlIdentifier.fromInternal
 import org.apache.spark.SparkException
 import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, TableAlreadyExistsException}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.mutable.{Map => MutableMap}
 
 class CassandraCatalogTableSpec extends CassandraCatalogSpecBase {

@@ -10,6 +10,7 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.{FlatSpec, Matchers}
 import com.datastax.driver.core.RowMock
 import com.datastax.spark.connector.rdd.ReadConf
+import com.datastax.spark.connector.util.RuntimeUtil.toParallelIterable
 import org.scalatestplus.mockito.MockitoSugar
 
 class InputMetricsUpdaterSpec extends FlatSpec with Matchers with MockitoSugar {
@@ -55,8 +56,8 @@ class InputMetricsUpdaterSpec extends FlatSpec with Matchers with MockitoSugar {
     val updater = InputMetricsUpdater(tc, ReadConf.fromSparkConf(conf))
     val row = new RowMock(Some(1), Some(2), Some(3), None, Some(4))
 
-    val range = (1 to 1000).par
-    range.tasksupport = new ForkJoinTaskSupport(new scala.concurrent.forkjoin.ForkJoinPool(10))
+    val range = toParallelIterable(1 to 1000).par
+    range.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(10))
     for (i <- range) updater.updateMetrics(row)
     updater.finish()
     tc.taskMetrics().inputMetrics.bytesRead shouldBe 10000L
@@ -111,8 +112,8 @@ class InputMetricsUpdaterSpec extends FlatSpec with Matchers with MockitoSugar {
     ccs.readRowMeter.getCount shouldBe 0
     ccs.readByteMeter.getCount shouldBe 0
 
-    val range = (1 to 1000).par
-    range.tasksupport = new ForkJoinTaskSupport(new scala.concurrent.forkjoin.ForkJoinPool(10))
+    val range = toParallelIterable(1 to 1000).par
+    range.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(10))
     for (i <- range) updater.updateMetrics(row)
     updater.finish()
 

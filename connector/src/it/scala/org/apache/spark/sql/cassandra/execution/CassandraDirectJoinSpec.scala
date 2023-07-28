@@ -336,7 +336,7 @@ class CassandraDirectJoinSpec extends SparkCassandraITFlatSpecBase with DefaultC
 
     //Need to wait for a real batch to occur
     try {
-      eventually(timeout(scaled(10 seconds))) {
+      eventually(timeout(scaled(10.seconds))) {
         getDirectJoin(stream) shouldBe defined
       }
     } finally {

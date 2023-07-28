@@ -9,7 +9,6 @@ import java.io.IOException
 
 import com.datastax.bdp.util.ScalaJavaUtil.asScalaFuture
 
-import scala.collection.JavaConversions._
 import scala.language.existentials
 import scala.reflect.ClassTag
 import org.apache.spark.annotation.DeveloperApi
@@ -30,6 +29,7 @@ import com.datastax.spark.connector.util.{CountingIterator, MergeJoinIterator, N
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import scala.jdk.CollectionConverters._
 
 /**
   * A RDD which pulls from two separate CassandraTableScanRDDs which share partition keys and
@@ -115,7 +115,7 @@ class CassandraMergeJoinRDD[L,R](
 
     try {
       val stmt = session.prepare(cql)
-      val converters = stmt.getVariableDefinitions
+      val converters = stmt.getVariableDefinitions.asScala
         .map(v => ColumnType.converterToCassandra(v.getType))
         .toArray
       val convertedValues =

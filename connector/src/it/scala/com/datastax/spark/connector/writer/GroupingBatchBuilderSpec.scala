@@ -7,7 +7,7 @@ import com.datastax.spark.connector.cql.{CassandraConnector, Schema}
 import com.datastax.spark.connector.util.schemaFromCassandra
 import com.datastax.spark.connector.{BatchSize, BytesInBatch, RowsInBatch, SparkCassandraITFlatSpecBase}
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import scala.util.Random
 
 class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
@@ -76,7 +76,7 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
       statements(1) shouldBe a[RichBoundStatementWrapper]
       statements.flatMap {
         case s: RichBoundStatementWrapper => List(s.stmt)
-        case s: RichBatchStatementWrapper => s.stmt.collect{ case b: BoundStatement => b }
+        case s: RichBatchStatementWrapper => s.stmt.asScala.collect{ case b: BoundStatement => b }
       }.map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
     }
   }
@@ -93,7 +93,7 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
       statements.map(_.stmt).flatMap {
         case s: BatchStatement =>
           s.size() should be(2)
-          s.collect{ case b: BoundStatement => b }
+          s.asScala.collect{ case b: BoundStatement => b }
       }.map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
     }
   }
@@ -121,7 +121,7 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
 
       val stmtss = statements.map(_.stmt).map {
         case s: BoundStatement => List(s)
-        case s: BatchStatement => s.collect{ case b: BoundStatement => b }
+        case s: BatchStatement => s.asScala.collect{ case b: BoundStatement => b }
       }
 
       stmtss.foreach(stmts => stmts.size should be > 0)
@@ -180,7 +180,7 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
       statements(1) shouldBe a[RichBoundStatementWrapper]
       statements.flatMap {
         case s: RichBoundStatementWrapper => List(s.stmt)
-        case s: RichBatchStatementWrapper => s.stmt.collect{ case b: BoundStatement => b }
+        case s: RichBatchStatementWrapper => s.stmt.asScala.collect{ case b: BoundStatement => b }
       }.map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
     }
   }
@@ -208,7 +208,7 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
       statements.flatMap {
         case s: RichBatchStatementWrapper =>
           s.stmt.size() should be(2)
-          s.stmt.collect{ case b: BoundStatement => b }
+          s.stmt.asScala.collect{ case b: BoundStatement => b }
       }.map(s => (s.getInt(0), s.getString(1))) should contain theSameElementsAs data
     }
   }
@@ -239,14 +239,14 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
       boundStatements should contain theSameElementsAs Seq(5, 6, 7)
 
       val batchStatements = statements collect {
-        case s: RichBatchStatementWrapper if s.stmt.size() == 2 => s.stmt.collect{ case b: BoundStatement => b.getInt(0) }
+        case s: RichBatchStatementWrapper if s.stmt.size() == 2 => s.stmt.asScala.collect{ case b: BoundStatement => b.getInt(0) }
       }
       batchStatements should have size 2
       batchStatements should contain theSameElementsAs Seq(List(1, 3), List(2, 4))
 
       val stmtss = statements.map {
         case s: RichBoundStatementWrapper => List(s.stmt)
-        case s: RichBatchStatementWrapper => s.stmt.collect{ case b: BoundStatement => b }
+        case s: RichBatchStatementWrapper => s.stmt.asScala.collect{ case b: BoundStatement => b }
       }
       stmtss.foreach(stmts => stmts.size should be > 0)
       stmtss.foreach(stmts => if (stmts.size > 1) stmts.map(BoundStatementBuilder.calculateDataSize).sum should be <= 15)
@@ -283,7 +283,7 @@ class GroupingBatchBuilderSpec extends SparkCassandraITFlatSpecBase with Default
         case s: RichBoundStatementWrapper => List(s.stmt)
         case s: RichBatchStatementWrapper =>
           s.stmt.size() should be <= 10
-          s.stmt.collect { case b: BoundStatement => b }
+          s.stmt.asScala.collect { case b: BoundStatement => b }
       }.map(s => (s.getInt(0), s.getString(1))).sortBy(_.toString()) should contain theSameElementsInOrderAs data.sortBy(_.toString())
     }
 

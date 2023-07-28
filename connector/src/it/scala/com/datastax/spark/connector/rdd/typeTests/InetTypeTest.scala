@@ -6,7 +6,7 @@ import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.spark.connector.cluster.DefaultCluster
 import org.apache.spark.sql.SaveMode
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 case class InetStringRow(pkey: String, ckey1: String, ckey2: String, data1: String)
 class InetTypeTest extends AbstractTypeTest[InetAddress, InetAddress] with DefaultCluster {

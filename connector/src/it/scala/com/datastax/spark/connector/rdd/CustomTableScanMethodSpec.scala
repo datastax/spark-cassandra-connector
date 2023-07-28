@@ -5,6 +5,7 @@ import com.datastax.spark.connector.cluster.{DefaultCluster, SeparateJVM}
 import com.datastax.spark.connector.cql._
 import com.datastax.spark.connector.embedded.SparkTemplate._
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
+import com.datastax.spark.connector.util.RuntimeUtil
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 import org.apache.spark.{SparkContext, SparkException}
 import org.scalatest.Inspectors
@@ -33,7 +34,7 @@ class CustomTableScanMethodSpec extends SparkCassandraITFlatSpecBase with Defaul
       session.execute(s"CREATE TABLE $ks.$tableName(key int primary key, value text)")
       val st = session.prepare(s"INSERT INTO $ks.$tableName(key, value) VALUES(?, ?)")
       // 1M rows x 64 bytes of payload = 64 MB of data + overhead
-      for (i <- (1 to 100).par) {
+      for (i <- RuntimeUtil.toParallelIterable(1 to 100).par) {
         val key = i.asInstanceOf[AnyRef]
         val value = "123456789.123456789.123456789.123456789.123456789.123456789."
         session.execute(st.bind(key, value))

@@ -63,6 +63,6 @@ extends Iterator[(K, Seq[L], Seq[R])] {
     val bufferRight = new ArrayBuffer[R]
     itemsLeft.appendWhile(l => keyExtractLeft(l) == key, bufferLeft)
     itemsRight.appendWhile(r => keyExtractRight(r) == key, bufferRight)
-    (key, bufferLeft, bufferRight)
+    (key, bufferLeft.toSeq, bufferRight.toSeq)
   }
 }

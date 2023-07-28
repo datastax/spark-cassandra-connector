@@ -15,7 +15,7 @@ private[writer] sealed trait Batch extends Ordered[Batch] {
   def add(stmt: RichBoundStatementWrapper, force: Boolean = false): Boolean
 
   /** Collected statements */
-  def statements: Seq[RichBoundStatementWrapper] = buf
+  def statements: Seq[RichBoundStatementWrapper] = buf.toSeq
 
   /** Only for internal use - batches are compared by this value. */
   protected[Batch] def size: Int

@@ -5,7 +5,7 @@ import java.util.function.BiConsumer
 
 import com.datastax.spark.connector.util.Logging
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.concurrent.TrieMap
 import scala.util.Try
 import AsyncExecutor.Handler

@@ -8,7 +8,7 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.japi.CassandraJavaUtil._
 import org.apache.spark.api.java.function.{Function2, Function => JFunction}
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.Future
 
 case class SimpleClass(value: Integer)
@@ -103,15 +103,16 @@ class CassandraJavaPairRDDSpec extends SparkCassandraITFlatSpecBase with Default
         "key")
       .spanBy(f, classOf[Integer])
       .collect()
+      .asScala
       .toMap
 
     results should have size 2
     results should contain key 10
     results should contain key 20
-    results(10).size should be(3)
-    results(10).map(_._2).toSeq should be(Seq(10, 11, 12))
-    results(20).size should be(3)
-    results(20).map(_._2).toSeq should be(Seq(20, 21, 22))
+    results(10).asScala.size should be(3)
+    results(10).asScala.map(_._2).toSeq should be(Seq(10, 11, 12))
+    results(20).asScala.size should be(3)
+    results(20).asScala.map(_._2).toSeq should be(Seq(20, 21, 22))
   }
 
   it should "allow to use spanByKey method" in {
@@ -129,15 +130,16 @@ class CassandraJavaPairRDDSpec extends SparkCassandraITFlatSpecBase with Default
         "key")
       .spanByKey()
       .collect()
+      .asScala
       .toMap
 
     results should have size 2
     results should contain key 10
     results should contain key 20
     results(10).size should be(3)
-    results(10).toSeq should be(Seq(10, 11, 12))
+    results(10).asScala.toSeq should be(Seq(10, 11, 12))
     results(20).size should be(3)
-    results(20).toSeq should be(Seq(20, 21, 22))
+    results(20).asScala.toSeq should be(Seq(20, 21, 22))
   }
 
   it should "allow to use of keyByAndApplyPartitioner" in {

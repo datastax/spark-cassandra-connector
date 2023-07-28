@@ -17,7 +17,7 @@ import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructT
 import org.joda.time.LocalDate
 import org.scalatest.concurrent.Eventually
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.Future
 
 case class RowWithV4Types(key: Int, a: Byte, b: Short, c: java.sql.Date)
@@ -180,8 +180,8 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
 
     val meta = conn.withSessionDo(_.getMetadata)
     val autoTableMeta = meta.getKeyspace(ks).get().getTable("kv_auto").get()
-    autoTableMeta.getPartitionKey.map(k => toName(k.getName)) should contain ("v")
-    autoTableMeta.getClusteringColumns.map(c => toName(c._1.getName)) should contain ("k")
+    autoTableMeta.getPartitionKey.asScala.map(k => toName(k.getName)) should contain ("v")
+    autoTableMeta.getClusteringColumns.asScala.map(c => toName(c._1.getName)) should contain ("k")
 
   }
 
@@ -202,9 +202,9 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
 
     val meta = conn.withSessionDo(_.getMetadata)
     val autoTableMeta = meta.getKeyspace(ks).get().getTable("kv_auto2").get()
-    autoTableMeta.getPartitionKey.map(k => toName(k.getName)) should contain ("v")
-    autoTableMeta.getClusteringColumns.map(c => toName(c._1.getName)) should contain ("k")
-    autoTableMeta.getClusteringColumns.map(_._2) should contain (ClusteringOrder.DESC)
+    autoTableMeta.getPartitionKey.asScala.map(k => toName(k.getName)) should contain ("v")
+    autoTableMeta.getClusteringColumns.asScala.map(c => toName(c._1.getName)) should contain ("k")
+    autoTableMeta.getClusteringColumns.asScala.map(_._2) should contain (ClusteringOrder.DESC)
     autoTableMeta.getOptions.getOrDefault(CqlIdentifier.fromCql("gc_grace_seconds"), "0").toString should equal ("1000")
   }
 
@@ -319,7 +319,7 @@ class CassandraDataFrameSpec extends SparkCassandraITFlatSpecBase with DefaultCl
     df.createCassandraTable(ks, table)
 
     val tableColumns = eventually(
-      conn.withSessionDo(_.getMetadata.getKeyspace(ks).get().getTable(table)).get().getColumns.map(_._2.getType))
+      conn.withSessionDo(_.getMetadata.getKeyspace(ks).get().getTable(table)).get().getColumns.asScala.map(_._2.getType))
 
     tableColumns should contain theSameElementsAs (
       Seq(DataTypes.INT, DataTypes.INT, DataTypes.INT, DataTypes.TIMESTAMP)

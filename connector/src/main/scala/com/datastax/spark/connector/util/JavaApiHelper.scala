@@ -4,7 +4,6 @@ import java.lang.{Iterable => JIterable}
 import java.util.{Collection => JCollection}
 import java.util.{Map => JMap}
 
-import scala.collection.JavaConversions._
 import scala.reflect._
 import scala.reflect.api.{Mirror, TypeCreator, _}
 import scala.reflect.runtime.universe._
@@ -15,6 +14,7 @@ import com.datastax.spark.connector.CassandraRow
 import com.datastax.spark.connector.mapper.{ColumnMapper, JavaBeanColumnMapper}
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
 import com.datastax.spark.connector.writer.RowWriterFactory
+import scala.jdk.CollectionConverters._
 
 /** A helper class to make it possible to access components written in Scala from Java code.
   * INTERNAL API
@@ -55,11 +55,11 @@ object JavaApiHelper {
   def toScalaFunction1[T1, R](f: JFunction[T1, R]): T1 => R = f.call
 
   def valuesAsJavaIterable[K, V, IV <: Iterable[V]]: ((K, IV)) => (K, JIterable[V]) = {
-    case (k, iterable) => (k, asJavaIterable(iterable))
+    case (k, iterable) => (k, iterable.asJava)
   }
 
   def valuesAsJavaCollection[K, V, IV <: Iterable[V]]: ((K, IV)) => (K, JCollection[V]) = {
-    case (k, iterable) => (k, asJavaCollection(iterable))
+    case (k, iterable) => (k, iterable.asJavaCollection)
   }
 
   /** Returns a runtime class of a given `TypeTag`. */
@@ -71,7 +71,7 @@ object JavaApiHelper {
     classTag.runtimeClass.asInstanceOf[Class[T]]
 
   /** Converts a Java `Map` to a Scala immutable `Map`. */
-  def toScalaMap[K, V](map: JMap[K, V]): Map[K, V] = Map(map.toSeq: _*)
+  def toScalaMap[K, V](map: JMap[K, V]): Map[K, V] = Map(map.asScala.toSeq: _*)
 
   /** Converts an array to a Scala `Seq`. */
   def toScalaSeq[T](array: Array[T]): Seq[T] = array
@@ -80,7 +80,7 @@ object JavaApiHelper {
   def toScalaImmutableSeq[T](array: Array[T]): scala.collection.immutable.Seq[T] = array.toIndexedSeq
 
   /** Converts a Java `Iterable` to Scala `Seq`. */
-  def toScalaSeq[T](iterable: java.lang.Iterable[T]): Seq[T] = iterable.toSeq
+  def toScalaSeq[T](iterable: java.lang.Iterable[T]): Seq[T] = iterable.asScala.toSeq
 
   /** Returns the default `RowWriterFactory` initialized with the given `ColumnMapper`. */
   def defaultRowWriterFactory[T](typeTag: TypeTag[T], mapper: ColumnMapper[T]): RowWriterFactory[T] = {

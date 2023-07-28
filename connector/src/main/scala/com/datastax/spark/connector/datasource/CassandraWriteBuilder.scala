@@ -13,7 +13,7 @@ import org.apache.spark.sql.connector.write.streaming.{StreamingDataWriterFactor
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 case class CassandraWriteBuilder(

@@ -46,7 +46,7 @@ class MultiThreadedSpec extends SparkCassandraITFlatSpecBase with DefaultCluster
     for (thread <- threads) thread.start()
     import org.scalatest.time.SpanSugar._
 
-    w.await(timeout(90 seconds), dismissals(5))
+    w.await(timeout(90.seconds), dismissals(5))
     for (thread <- threads) thread.join()
   }
 

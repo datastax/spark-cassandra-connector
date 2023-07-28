@@ -23,7 +23,7 @@ import org.mockito.{Matchers => m}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import org.scalatestplus.mockito.MockitoSugar
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class NodeFilter(context: DriverContext, profileName: String) extends Predicate[Node] {
   override def test(t: Node): Boolean = DriverUtil.toAddress(t).get.getHostName.equals("192.168.123.2")

@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import com.datastax.oss.driver.api.core.cql.BoundStatement
 import com.datastax.spark.connector.writer.NullKeyColumnException
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object QueryUtils {
   /**

@@ -4,7 +4,8 @@ import sbt.{Compile, moduleFilter, _}
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 
 lazy val scala212 = "2.12.11"
-lazy val supportedScalaVersions = List(scala212)
+lazy val scala213 = "2.13.11"
+lazy val supportedScalaVersions = List(scala212, scala213)
 
 // factor out common settings
 ThisBuild / scalaVersion := scala212
@@ -60,8 +61,9 @@ lazy val commonSettings = Seq(
   fork := true,
   parallelExecution := true,
   testForkedParallel := false,
-  testOptions += Tests.Argument(TestFrameworks.JUnit, "-v")
+  testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
 )
+
 
 val annotationProcessor = Seq(
   "-processor", "com.datastax.oss.driver.internal.mapper.processor.MapperProcessor"
@@ -70,6 +72,7 @@ val annotationProcessor = Seq(
 def scalacVersionDependantOptions(scalaBinary: String): Seq[String] = scalaBinary match {
   case "2.11" => Seq()
   case "2.12" => Seq("-no-java-comments") //Scala Bug on inner classes, CassandraJavaUtil,
+  case "2.13" => Seq("-no-java-comments") //Scala Bug on inner classes, CassandraJavaUtil,
 }
 
 lazy val root = (project in file("."))
@@ -80,6 +83,7 @@ lazy val root = (project in file("."))
     crossScalaVersions := Nil,
     publish / skip := true
   )
+
 
 lazy val connector = (project in file("connector"))
   .configs(IntegrationTest)
@@ -105,6 +109,7 @@ lazy val connector = (project in file("connector"))
     Global / concurrentRestrictions := Seq(Tags.limitAll(Testing.parallelTasks)),
 
     libraryDependencies ++= Dependencies.Spark.dependencies
+      ++ Dependencies.Compatibility.dependencies(scalaVersion.value)
       ++ Dependencies.TestConnector.dependencies
       ++ Dependencies.Jetty.dependencies,
 
@@ -121,7 +126,8 @@ lazy val testSupport = (project in file("test-support"))
   .settings(
     crossScalaVersions := supportedScalaVersions,
     name := "spark-cassandra-connector-test-support",
-    libraryDependencies ++= Dependencies.TestSupport.dependencies
+    libraryDependencies ++= Dependencies.Compatibility.dependencies(scalaVersion.value)
+      ++ Dependencies.TestSupport.dependencies
   )
 
 lazy val driver = (project in file("driver"))
@@ -131,7 +137,8 @@ lazy val driver = (project in file("driver"))
     crossScalaVersions := supportedScalaVersions,
     name := "spark-cassandra-connector-driver",
     assembly /test := {},
-    libraryDependencies ++= Dependencies.Driver.dependencies
+    libraryDependencies ++= Dependencies.Compatibility.dependencies(scalaVersion.value)
+      ++ Dependencies.Driver.dependencies
       ++ Dependencies.TestDriver.dependencies
       :+ ("org.scala-lang" % "scala-reflect" % scalaVersion.value)
   )

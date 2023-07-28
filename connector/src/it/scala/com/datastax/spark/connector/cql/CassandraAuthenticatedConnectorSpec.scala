@@ -7,7 +7,7 @@ import com.datastax.oss.driver.api.core.auth.AuthenticationException
 import com.datastax.spark.connector.cluster.AuthCluster
 import com.datastax.spark.connector.{SparkCassandraITFlatSpecBase, _}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase with AuthCluster {
 
@@ -66,7 +66,7 @@ class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase w
       "spark.cassandra.auth.password" -> "cassandra",
       "keyspace" -> ks, "table" -> "authtest")
 
-    personDF1.write.format("org.apache.spark.sql.cassandra").options(options).mode("append")save()
+    personDF1.write.format("org.apache.spark.sql.cassandra").options(options).mode("append").save()
     val personDF2 = spark.read.format("org.apache.spark.sql.cassandra").options(options).load()
 
     personDF2.count should be(4)

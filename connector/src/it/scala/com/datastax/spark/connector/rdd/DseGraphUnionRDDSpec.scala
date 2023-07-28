@@ -8,7 +8,7 @@ package com.datastax.spark.connector.rdd
 
 import java.lang.{Integer => JInteger, String => JString}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.Future
 import scala.language.existentials
 import scala.util.Random

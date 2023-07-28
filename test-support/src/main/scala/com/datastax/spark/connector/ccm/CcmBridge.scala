@@ -104,7 +104,7 @@ object CcmBridge {
         logger.error(
           "Non-zero exit code ({}) returned from executing ccm command: {}", retValue, cli)
       }
-      outStream.lines
+      outStream.lines.toSeq
     } catch {
       case _: IOException if watchDog.killedProcess() =>
         throw new RuntimeException(s"The command $cli was killed after 10 minutes")

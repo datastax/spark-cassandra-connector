@@ -11,8 +11,8 @@ import com.datastax.oss.driver.api.core.`type`.{DataType, DataTypes => DriverDat
 import com.datastax.spark.connector.util._
 
 
-import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
+import scala.jdk.CollectionConverters._
 
 /** Serializable representation of column data type. */
 trait ColumnType[T] extends Serializable {

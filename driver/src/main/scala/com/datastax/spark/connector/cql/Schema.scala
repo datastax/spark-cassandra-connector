@@ -13,7 +13,7 @@ import com.datastax.spark.connector.util.DriverUtil.{toName, toOption}
 import com.datastax.spark.connector.util.Quote._
 import com.datastax.spark.connector.util.{Logging, NameTools}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.language.existentials
 import scala.util.{Properties, Try}
 
@@ -308,7 +308,7 @@ object Schema extends Logging {
 
   private def fetchPartitionKey(table: RelationMetadata): Seq[ColumnDef] = {
     for (column <- table.getPartitionKey.asScala) yield ColumnDef(column, PartitionKeyColumn)
-  }
+  }.toSeq
 
   private def fetchClusteringColumns(table: RelationMetadata): Seq[ColumnDef] = {
     for ((column, index) <- table.getClusteringColumns.asScala.toSeq.zipWithIndex) yield {

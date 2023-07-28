@@ -1,11 +1,11 @@
 package com.datastax.spark.connector.rdd.partitioner
 
-import scala.collection.JavaConversions._
 import com.datastax.spark.connector.util.Logging
 import com.datastax.oss.driver.api.core.cql.SimpleStatementBuilder
 import com.datastax.oss.driver.api.core.servererrors.InvalidQueryException
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
+import scala.jdk.CollectionConverters._
 
 
 /** Estimates amount of data in the Cassandra table.
@@ -36,17 +36,19 @@ class DataSizeEstimates[V, T <: Token[V]](
   private lazy val tokenRanges: Seq[TokenRangeSizeEstimate] =
     conn.withSessionDo { session =>
       try {
-        val rs = session.execute(new SimpleStatementBuilder(
-          "SELECT range_start, range_end, partitions_count, mean_partition_size " +
-            "FROM system.size_estimates " +
-            "WHERE keyspace_name = ? AND table_name = ?").addPositionalValues(keyspaceName, tableName).build())
+        {
+          val rs = session.execute(new SimpleStatementBuilder(
+            "SELECT range_start, range_end, partitions_count, mean_partition_size " +
+              "FROM system.size_estimates " +
+              "WHERE keyspace_name = ? AND table_name = ?").addPositionalValues(keyspaceName, tableName).build())
 
-        for (row <- rs.all()) yield TokenRangeSizeEstimate(
-          rangeStart = tokenFactory.tokenFromString(row.getString("range_start")),
-          rangeEnd = tokenFactory.tokenFromString(row.getString("range_end")),
-          partitionsCount = row.getLong("partitions_count"),
-          meanPartitionSize = row.getLong("mean_partition_size")
-        )
+          for (row <- rs.all().asScala) yield TokenRangeSizeEstimate(
+            rangeStart = tokenFactory.tokenFromString(row.getString("range_start")),
+            rangeEnd = tokenFactory.tokenFromString(row.getString("range_end")),
+            partitionsCount = row.getLong("partitions_count"),
+            meanPartitionSize = row.getLong("mean_partition_size")
+          )
+        }.toSeq
 
         // The table may not contain the estimates yet if the data was just inserted and the
         // amount of data in the table was small. This is very common situation during tests,
@@ -103,7 +105,7 @@ object DataSizeEstimates {
       def hasSizeEstimates: Boolean = {
         session.execute(
           s"SELECT * FROM system.size_estimates " +
-            s"WHERE keyspace_name = '$keyspaceName' AND table_name = '$tableName'").all().nonEmpty
+            s"WHERE keyspace_name = '$keyspaceName' AND table_name = '$tableName'").all().asScala.nonEmpty
       }
 
       val startTime = System.currentTimeMillis()

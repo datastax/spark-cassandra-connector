@@ -271,7 +271,7 @@ class TypeConverterTest {
     buf.put(array)
     buf.rewind()
     assertSame(array, c.convert(array))
-    assertEquals(array.deep, c.convert(buf).deep)
+    assertEquals(array.toList, c.convert(buf).toList)
   }
 
   @Test

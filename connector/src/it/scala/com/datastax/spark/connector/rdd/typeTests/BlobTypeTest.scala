@@ -6,7 +6,7 @@ import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.oss.protocol.internal.util.Bytes
 import com.datastax.spark.connector.cluster.DefaultCluster
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class BlobTypeTest extends AbstractTypeTest[Array[Byte], ByteBuffer] with DefaultCluster {
 
@@ -44,13 +44,13 @@ class BlobTypeTest extends AbstractTypeTest[Array[Byte], ByteBuffer] with Defaul
       val resSet = row.getSet("set1", classOf[ByteBuffer]).asScala.map(Bytes.toHexString(_))
       val resList = row.getList("list1", classOf[ByteBuffer]).asScala.map(Bytes.toHexString(_))
       val resMap1 = row.getMap("map1", classOf[String], classOf[ByteBuffer]).asScala
-        .mapValues(Bytes.toHexString(_))
+        .map{ case (k,v) => (k, Bytes.toHexString(v)) }
       val resMap2 = row.getMap("map2", classOf[ByteBuffer], classOf[String]).asScala
         .map{ case (k,v) => (Bytes.toHexString(k), v)}
 
       resSet should contain theSameElementsAs bufferTypeSet.map(Bytes.toHexString(_))
       resList should contain theSameElementsAs bufferTypeSet.toList.map(Bytes.toHexString(_))
-      resMap1 should contain theSameElementsAs bufferTypeMap1.mapValues( Bytes.toHexString(_))
+      resMap1 should contain theSameElementsAs bufferTypeMap1.map{ case (k, v) => (k, Bytes.toHexString(v))}
       resMap2 should contain theSameElementsAs bufferTypeMap2.map{ case (k,v) => (Bytes.toHexString(k), v)}
     }
   }
@@ -80,7 +80,7 @@ class BlobTypeTest extends AbstractTypeTest[Array[Byte], ByteBuffer] with Defaul
       Bytes.toHexString(pkey),
       set1.map(Bytes.toHexString(_)),
       list1.map(Bytes.toHexString(_)),
-      map1.mapValues(Bytes.toHexString(_)),
+      map1.map{ case (k,v) => (k, Bytes.toHexString(v))},
       map2.map{ case (k,v) => (Bytes.toHexString(k), v)})
     }
 
@@ -91,8 +91,8 @@ class BlobTypeTest extends AbstractTypeTest[Array[Byte], ByteBuffer] with Defaul
         x,
         expectedCollections._1.map(Bytes.toHexString(_)),
         expectedCollections._2.map(Bytes.toHexString(_)),
-        expectedCollections._3.mapValues(Bytes.toHexString(_)),
-        expectedCollections._4.map { case (k, v) => (Bytes.toHexString(k), v) }))
+        expectedCollections._3.map{ case (k, v) => (k, Bytes.toHexString(v)) },
+        expectedCollections._4.map{ case (k, v) => (Bytes.toHexString(k), v) }))
       expected
     }
   }

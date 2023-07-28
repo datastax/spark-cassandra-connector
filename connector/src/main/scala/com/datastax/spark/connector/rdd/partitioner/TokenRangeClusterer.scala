@@ -9,6 +9,8 @@ import scala.annotation.tailrec
 
 import com.datastax.spark.connector.rdd.partitioner.TokenRangeClusterer.WholeRing
 
+import scala.collection.compat.immutable.LazyList
+
 /** Groups a set of token ranges into `groupCount` groups containing not more than `maxGroupSize` token
   * ranges.
   * Each group will form a single `CassandraRDDPartition`.
@@ -30,16 +32,16 @@ class TokenRangeClusterer[V, T <: Token[V]](groupCount: Int, maxGroupSize: Int =
   }
 
   @tailrec
-  private def group(tokenRanges: Stream[TokenRange[V, T]],
+  private def group(tokenRanges: LazyList[TokenRange[V, T]],
                     result: Vector[Seq[TokenRange[V, T]]],
                     ringFractionPerGroup: Double): Iterable[Seq[TokenRange[V, T]]] = {
     tokenRanges match {
-      case Stream.Empty => result
-      case head #:: rest =>
-        val firstEndpoint = head.replicas.min
+      case range if range.isEmpty => result
+      case range =>
+        val firstEndpoint = range.head.replicas.min
         val ringFractions = tokenRanges.map(_.ringFraction)
         val cumulativeRingFractions = ringFractions.scanLeft(.0)(_ + _).tail // drop first item always == 0
-        val ringFractionLimit = math.max(ringFractionPerGroup, head.ringFraction) // make sure first element will be always included
+        val ringFractionLimit = math.max(ringFractionPerGroup, range.head.ringFraction) // make sure first element will be always included
         val cluster = tokenRanges
           .take(math.max(1, maxGroupSize))
           .zip(cumulativeRingFractions)
@@ -58,7 +60,7 @@ class TokenRangeClusterer[V, T <: Token[V]](groupCount: Int, maxGroupSize: Int =
     // sort by endpoints lexicographically
     // this way ranges on the same host are grouped together
     val sortedRanges = tokenRanges.sortBy(_.replicas.toSeq.sorted)
-    group(sortedRanges.toStream, Vector.empty, ringFractionPerGroup)
+    group(sortedRanges.to(LazyList) , Vector.empty, ringFractionPerGroup)
   }
 }
 

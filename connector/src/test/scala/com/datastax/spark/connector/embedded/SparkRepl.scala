@@ -1,8 +1,9 @@
 package com.datastax.spark.connector.embedded
 
+import com.datastax.spark.connector.util.RuntimeUtil
+
 import java.io._
 import java.net.URLClassLoader
-
 import org.apache.spark.SparkConf
 import org.apache.spark.repl.{Main, SparkILoop}
 
@@ -27,12 +28,12 @@ object SparkRepl {
     }
 
     Main.conf.setAll(conf.getAll)
-    val interp = new SparkILoop(Some(in), new PrintWriter(out))
+    val interp = RuntimeUtil.createSparkILoop(in, new PrintWriter(out))
     Main.interp = interp
     val separator = System.getProperty("path.separator")
     val settings = new GenericRunnerSettings(s => throw new RuntimeException(s"Scala options error: $s"))
     settings.processArguments(List("-classpath", paths.mkString(separator)), processAll = true)
-    interp.process(settings) // Repl starts and goes in loop of R.E.P.L
+    interp.run(settings) // Repl starts and goes in loop of R.E.P.L
     Main.interp = null
     Option(Main.sparkContext).foreach(_.stop())
     System.clearProperty("spark.driver.port")
