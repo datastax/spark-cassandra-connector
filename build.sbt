@@ -4,10 +4,11 @@ import sbt.{Compile, moduleFilter, _}
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 
 lazy val scala212 = "2.12.11"
-lazy val supportedScalaVersions = List(scala212)
+lazy val scala213 = "2.13.8"
+lazy val supportedScalaVersions = List(scala212, scala213)
 
 // factor out common settings
-ThisBuild / scalaVersion := scala212
+ThisBuild / scalaVersion := scala213
 ThisBuild / scalacOptions ++= Seq("-target:jvm-1.8")
 
 // Publishing Info
@@ -70,6 +71,7 @@ val annotationProcessor = Seq(
 def scalacVersionDependantOptions(scalaBinary: String): Seq[String] = scalaBinary match {
   case "2.11" => Seq()
   case "2.12" => Seq("-no-java-comments") //Scala Bug on inner classes, CassandraJavaUtil,
+  case "2.13" => Seq("-no-java-comments") //Scala Bug on inner classes, CassandraJavaUtil,
 }
 
 lazy val root = (project in file("."))

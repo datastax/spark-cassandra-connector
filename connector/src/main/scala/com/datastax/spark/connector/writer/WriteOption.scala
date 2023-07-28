@@ -42,7 +42,7 @@ object TTLOption {
 
   def constant(ttl: JodaDuration): TTLOption = constant(ttl.getStandardSeconds.toInt)
 
-  def constant(ttl: ScalaDuration): TTLOption = if (ttl.isFinite()) constant(ttl.toSeconds.toInt) else forever
+  def constant(ttl: ScalaDuration): TTLOption = if (ttl.isFinite) constant(ttl.toSeconds.toInt) else forever
 
   def perRow(placeholder: String): TTLOption = TTLOption(PerRowWriteOptionValue[Int](placeholder))
 

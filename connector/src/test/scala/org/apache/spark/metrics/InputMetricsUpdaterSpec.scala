@@ -1,6 +1,7 @@
 package org.apache.spark.metrics
 
 import scala.collection.parallel.ForkJoinTaskSupport
+import scala.collection.parallel.CollectionConverters._
 import scala.concurrent.duration._
 import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.metrics.source.Source
@@ -56,7 +57,7 @@ class InputMetricsUpdaterSpec extends FlatSpec with Matchers with MockitoSugar {
     val row = new RowMock(Some(1), Some(2), Some(3), None, Some(4))
 
     val range = (1 to 1000).par
-    range.tasksupport = new ForkJoinTaskSupport(new scala.concurrent.forkjoin.ForkJoinPool(10))
+    range.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(10))
     for (i <- range) updater.updateMetrics(row)
     updater.finish()
     tc.taskMetrics().inputMetrics.bytesRead shouldBe 10000L
@@ -112,7 +113,7 @@ class InputMetricsUpdaterSpec extends FlatSpec with Matchers with MockitoSugar {
     ccs.readByteMeter.getCount shouldBe 0
 
     val range = (1 to 1000).par
-    range.tasksupport = new ForkJoinTaskSupport(new scala.concurrent.forkjoin.ForkJoinPool(10))
+    range.tasksupport = new ForkJoinTaskSupport(new java.util.concurrent.ForkJoinPool(10))
     for (i <- range) updater.updateMetrics(row)
     updater.finish()
 

@@ -3,7 +3,7 @@ package com.datastax.spark.connector.japi.rdd;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
-import scala.collection.Seq;
+import scala.collection.immutable.Seq;
 import scala.reflect.ClassTag;
 
 import com.datastax.spark.connector.ColumnRef;
@@ -17,6 +17,7 @@ import com.datastax.spark.connector.util.JavaApiHelper;
 
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.toSelectableColumnRefs;
 import static com.datastax.spark.connector.util.JavaApiHelper.getClassTag;
+import static com.datastax.spark.connector.util.JavaApiHelper.toScalaImmutableSeq;
 import static com.datastax.spark.connector.util.JavaApiHelper.toScalaSeq;
 
 /**
@@ -54,7 +55,7 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
      * was removed by the previous {@code select} call, it is not possible to add it back.
      */
     public CassandraJavaRDD<R> select(String... columnNames) {
-        Seq<ColumnRef> columnRefs = toScalaSeq(toSelectableColumnRefs(columnNames));
+        Seq<ColumnRef> columnRefs = toScalaImmutableSeq(toSelectableColumnRefs(columnNames));
         CassandraRDD<R> newRDD = rdd().select(columnRefs);
         return wrap(newRDD);
     }
@@ -67,7 +68,7 @@ public class CassandraJavaRDD<R> extends JavaRDD<R> {
      * was removed by the previous {@code select} call, it is not possible to add it back.</p>
      */
     public CassandraJavaRDD<R> select(ColumnRef... columns) {
-        Seq<ColumnRef> columnRefs = JavaApiHelper.toScalaSeq(columns);
+        Seq<ColumnRef> columnRefs = JavaApiHelper.toScalaImmutableSeq(columns);
         CassandraRDD<R> newRDD = rdd().select(columnRefs);
         return wrap(newRDD);
     }

@@ -10,7 +10,7 @@ import java.lang.{String => JString}
 import java.util.{Map => JMap}
 
 import scala.annotation.meta.param
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import scala.language.existentials
 import scala.reflect.ClassTag
 import org.apache.spark.rdd.{RDD, UnionRDD}
@@ -33,8 +33,8 @@ object DseGraphUnionedRDD {
       graphLabels: java.util.List[String])(
       implicit
       connector: CassandraConnector): DseGraphUnionedRDD[R] = {
-    val rddSeq: Seq[RDD[R]] = rdds
-    val labelSeq: Seq[String] = graphLabels
+    val rddSeq: Seq[RDD[R]] = rdds.asScala.toSeq
+    val labelSeq: Seq[String] = graphLabels.asScala.toSeq
     new DseGraphUnionedRDD(sc, rddSeq, keyspace, labelSeq)
   }
 }
@@ -188,7 +188,7 @@ class DseGraphPartitioner[V, T <: Token[V]](
     */
   override def getPartition(key: Any): Int = key match {
     case vertexId: JMap[JString, AnyRef]@unchecked => {
-      val label: String = vertexId.getOrElse(
+      val label: String = vertexId.asScala.getOrElse(
         LabelAccessor,
         throw new IllegalArgumentException(s"Couldn't find $LabelAccessor in key $key"))
           .asInstanceOf[String]
@@ -217,7 +217,7 @@ class DseGraphPartitioner[V, T <: Token[V]](
 class MapRowWriter(override val columnNames: Seq[String]) extends RowWriter[JMap[JString, AnyRef]] {
   override def readColumnValues(data: JMap[JString, AnyRef], buffer: Array[Any]): Unit =
     columnNames.zipWithIndex.foreach { case (columnName, index) =>
-      buffer(index) = data.getOrElse(columnName,
+      buffer(index) = data.asScala.getOrElse(columnName,
         throw new IllegalArgumentException(s"""Couldn't find $columnName in $data, unable to generate token"""))
     }
 }

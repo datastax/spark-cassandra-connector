@@ -1,8 +1,7 @@
 package com.datastax.spark.connector
 
 import java.nio.ByteBuffer
-
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import com.datastax.oss.driver.api.core.cql.Row
 
 import com.datastax.oss.driver.api.core.`type`.codec.TypeCodec
@@ -74,9 +73,9 @@ object GettableData {
   private[connector] def convert(obj: Any): AnyRef = {
     obj match {
       case bb: ByteBuffer => ByteBufferUtil.toArray(bb)
-      case list: java.util.List[_] => list.view.map(convert).toList
-      case set: java.util.Set[_] => set.view.map(convert).toSet
-      case map: java.util.Map[_, _] => map.view.map { case (k, v) => (convert(k), convert(v))}.toMap
+      case list: java.util.List[_] => list.asScala.map(convert).toList
+      case set: java.util.Set[_] => set.asScala.map(convert).toSet
+      case map: java.util.Map[_, _] => map.asScala.map { case (k, v) => (convert(k), convert(v))}.toMap
       case udtValue: DriverUDTValue => UDTValue.fromJavaDriverUDTValue(udtValue)
       case tupleValue: DriverTupleValue => TupleValue.fromJavaDriverTupleValue(tupleValue)
       case other => other.asInstanceOf[AnyRef]

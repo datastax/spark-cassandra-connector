@@ -66,7 +66,7 @@ class CassandraAuthenticatedConnectorSpec extends SparkCassandraITFlatSpecBase w
       "spark.cassandra.auth.password" -> "cassandra",
       "keyspace" -> ks, "table" -> "authtest")
 
-    personDF1.write.format("org.apache.spark.sql.cassandra").options(options).mode("append")save()
+    personDF1.write.format("org.apache.spark.sql.cassandra").options(options).mode("append").save()
     val personDF2 = spark.read.format("org.apache.spark.sql.cassandra").options(options).load()
 
     personDF2.count should be(4)

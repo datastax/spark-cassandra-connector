@@ -57,7 +57,7 @@ public class CassandraJavaPairRDD<K, V> extends JavaPairRDD<K, V> {
     @SuppressWarnings("unchecked")
     public CassandraJavaPairRDD<K, V> select(String... columnNames) {
         Seq<ColumnRef> columnRefs = toScalaSeq(toSelectableColumnRefs(columnNames));
-        CassandraRDD<Tuple2<K, V>> newRDD = rdd().select(columnRefs);
+        CassandraRDD<Tuple2<K, V>> newRDD = rdd().select(columnRefs.toSeq());
         return wrap(newRDD);
     }
 
@@ -71,7 +71,7 @@ public class CassandraJavaPairRDD<K, V> extends JavaPairRDD<K, V> {
     @SuppressWarnings("unchecked")
     public CassandraJavaPairRDD<K, V> select(ColumnRef... selectionColumns) {
         Seq<ColumnRef> columnRefs = JavaApiHelper.toScalaSeq(selectionColumns);
-        CassandraRDD<Tuple2<K, V>> newRDD = rdd().select(columnRefs);
+        CassandraRDD<Tuple2<K, V>> newRDD = rdd().select(columnRefs.toSeq());
         return wrap(newRDD);
     }
 

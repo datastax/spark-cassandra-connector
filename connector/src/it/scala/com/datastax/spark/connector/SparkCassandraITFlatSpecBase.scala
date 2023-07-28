@@ -200,8 +200,8 @@ trait SparkCassandraITSpecBase
     Await.result(Future.sequence(units), Duration.Inf)
   }
 
-  def awaitAll[T](units: TraversableOnce[Future[T]]): TraversableOnce[T] = {
-    Await.result(Future.sequence(units), Duration.Inf)
+  def awaitAll[T](units: IterableOnce[Future[T]]): IterableOnce[T] = {
+    Await.result(Future.sequence(units.iterator.toList), Duration.Inf)
   }
 
   def keyspaceCql(name: String = ks) =

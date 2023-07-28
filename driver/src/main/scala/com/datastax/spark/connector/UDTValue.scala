@@ -4,7 +4,7 @@ import com.datastax.oss.driver.api.core.data.{UdtValue => DriverUDTValue}
 import com.datastax.spark.connector.types.NullableTypeConverter
 import com.datastax.spark.connector.util.DriverUtil.toName
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import scala.reflect.runtime.universe._
 
 final case class UDTValue(metaData: CassandraRowMetadata, columnValues: IndexedSeq[AnyRef])
@@ -25,7 +25,7 @@ final case class UDTValue(metaData: CassandraRowMetadata, columnValues: IndexedS
 object UDTValue {
 
   def fromJavaDriverUDTValue(value: DriverUDTValue): UDTValue = {
-    val fields = value.getType.getFieldNames.map(f => toName(f)).toIndexedSeq
+    val fields = value.getType.getFieldNames.asScala.map(f => toName(f)).toIndexedSeq
     val values = fields.map(GettableData.get(value, _))
     UDTValue(fields, values)
   }

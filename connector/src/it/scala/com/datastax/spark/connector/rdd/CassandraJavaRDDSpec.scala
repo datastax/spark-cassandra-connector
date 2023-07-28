@@ -2,7 +2,6 @@ package com.datastax.spark.connector.rdd
 
 import java.io.IOException
 import java.net.{InetAddress, InetSocketAddress}
-
 import com.datastax.spark.connector._
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, IpBasedContactInfo}
@@ -12,8 +11,10 @@ import com.datastax.spark.connector.types.TypeConverter
 import org.apache.commons.lang3.tuple
 import org.apache.spark.api.java.function.{Function => JFunction}
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.ListHasAsScala
 import scala.concurrent.Future
+import scala.jdk.javaapi.CollectionConverters.asScala
 
 class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
@@ -91,25 +92,25 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
   "CassandraJavaRDD" should "allow to read data as CassandraRows " in {
     val rows = javaFunctions(sc).cassandraTable(ks, "test_table").collect()
     assert(rows.size == 3)
-    assert(rows.exists(row ⇒ row.getString("value") == "one" && row.getInt("key") == 1))
-    assert(rows.exists(row ⇒ row.getString("value") == "two" && row.getInt("key") == 2))
-    assert(rows.exists(row ⇒ row.getString("value") == null && row.getInt("key") == 3))
+    assert(rows.asScala.exists(row ⇒ row.getString("value") == "one" && row.getInt("key") == 1))
+    assert(rows.asScala.exists(row ⇒ row.getString("value") == "two" && row.getInt("key") == 2))
+    assert(rows.asScala.exists(row ⇒ row.getString("value") == null && row.getInt("key") == 3))
   }
 
   it should "allow to read data as Java beans " in {
     val beans = javaFunctions(sc).cassandraTable(ks, "test_table", mapRowTo(classOf[SampleJavaBean])).collect()
     assert(beans.size == 3)
-    assert(beans.exists(bean ⇒ bean.getValue == "one" && bean.getKey == 1))
-    assert(beans.exists(bean ⇒ bean.getValue == "two" && bean.getKey == 2))
-    assert(beans.exists(bean ⇒ bean.getValue == null && bean.getKey == 3))
+    assert(beans.asScala.exists(bean ⇒ bean.getValue == "one" && bean.getKey == 1))
+    assert(beans.asScala.exists(bean ⇒ bean.getValue == "two" && bean.getKey == 2))
+    assert(beans.asScala.exists(bean ⇒ bean.getValue == null && bean.getKey == 3))
   }
 
   it should "allow to read data as Java beans with inherited fields" in {
     val beans = javaFunctions(sc).cassandraTable(ks, "test_table3", mapRowTo(classOf[SampleJavaBeanSubClass])).collect()
     assert(beans.size == 3)
-    assert(beans.exists(bean ⇒ bean.getValue == "one" && bean.getKey == 1 && bean.getSubClassField == "a"))
-    assert(beans.exists(bean ⇒ bean.getValue == "two" && bean.getKey == 2 && bean.getSubClassField == "b"))
-    assert(beans.exists(bean ⇒ bean.getValue == null && bean.getKey == 3 && bean.getSubClassField == "c"))
+    assert(beans.asScala.exists(bean ⇒ bean.getValue == "one" && bean.getKey == 1 && bean.getSubClassField == "a"))
+    assert(beans.asScala.exists(bean ⇒ bean.getValue == "two" && bean.getKey == 2 && bean.getSubClassField == "b"))
+    assert(beans.asScala.exists(bean ⇒ bean.getValue == null && bean.getKey == 3 && bean.getSubClassField == "c"))
   }
 
   it should "allow to read data as Java beans with custom mapping defined by aliases" in {
@@ -118,17 +119,17 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
       .select(column("key").as("devil"), column("value").as("cat"))
       .collect()
     assert(beans.size == 3)
-    assert(beans.exists(bean ⇒ bean.getCat == "one" && bean.getDevil == 1))
-    assert(beans.exists(bean ⇒ bean.getCat == "two" && bean.getDevil == 2))
-    assert(beans.exists(bean ⇒ bean.getCat == null && bean.getDevil == 3))
+    assert(beans.asScala.exists(bean ⇒ bean.getCat == "one" && bean.getDevil == 1))
+    assert(beans.asScala.exists(bean ⇒ bean.getCat == "two" && bean.getDevil == 2))
+    assert(beans.asScala.exists(bean ⇒ bean.getCat == null && bean.getDevil == 3))
   }
 
   it should "allow to read data as Java beans (with multiple constructors)" in {
     val beans = javaFunctions(sc).cassandraTable(ks, "test_table", mapRowTo(classOf[SampleJavaBeanWithMultipleCtors])).collect()
     assert(beans.size == 3)
-    assert(beans.exists(bean ⇒ bean.getValue == "one" && bean.getKey == 1))
-    assert(beans.exists(bean ⇒ bean.getValue == "two" && bean.getKey == 2))
-    assert(beans.exists(bean ⇒ bean.getValue == null && bean.getKey == 3))
+    assert(beans.asScala.exists(bean ⇒ bean.getValue == "one" && bean.getKey == 1))
+    assert(beans.asScala.exists(bean ⇒ bean.getValue == "two" && bean.getKey == 2))
+    assert(beans.asScala.exists(bean ⇒ bean.getValue == null && bean.getKey == 3))
   }
 
   it should "throw NoSuchMethodException when trying to read data as Java beans (without no-args constructor)" in {
@@ -139,18 +140,18 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
   it should "allow to read data as nested Java beans" in {
     val beans = javaFunctions(sc).cassandraTable(ks, "test_table", mapRowTo(classOf[SampleWithNestedJavaBean#InnerClass])).collect()
     assert(beans.size == 3)
-    assert(beans.exists(bean ⇒ bean.getValue == "one" && bean.getKey == 1))
-    assert(beans.exists(bean ⇒ bean.getValue == "two" && bean.getKey == 2))
-    assert(beans.exists(bean ⇒ bean.getValue == null && bean.getKey == 3))
+    assert(beans.asScala.exists(bean ⇒ bean.getValue == "one" && bean.getKey == 1))
+    assert(beans.asScala.exists(bean ⇒ bean.getValue == "two" && bean.getKey == 2))
+    assert(beans.asScala.exists(bean ⇒ bean.getValue == null && bean.getKey == 3))
   }
 
   it should "allow to read data as deeply nested Java beans" in {
     val beans = javaFunctions(sc).cassandraTable(ks, "test_table",
       mapRowTo(classOf[SampleWithDeeplyNestedJavaBean#IntermediateClass#InnerClass])).collect()
     assert(beans.size == 3)
-    assert(beans.exists(bean ⇒ bean.getValue == "one" && bean.getKey == 1))
-    assert(beans.exists(bean ⇒ bean.getValue == "two" && bean.getKey == 2))
-    assert(beans.exists(bean ⇒ bean.getValue == null && bean.getKey == 3))
+    assert(beans.asScala.exists(bean ⇒ bean.getValue == "one" && bean.getKey == 1))
+    assert(beans.asScala.exists(bean ⇒ bean.getValue == "two" && bean.getKey == 2))
+    assert(beans.asScala.exists(bean ⇒ bean.getValue == null && bean.getKey == 3))
   }
 
 
@@ -158,9 +159,9 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
     val rows = javaFunctions(sc).cassandraTable(ks, "test_table")
       .select("key").collect()
     assert(rows.size == 3)
-    assert(rows.exists(row ⇒ !row.contains("value") && row.getInt("key") == 1))
-    assert(rows.exists(row ⇒ !row.contains("value") && row.getInt("key") == 2))
-    assert(rows.exists(row ⇒ !row.contains("value") && row.getInt("key") == 3))
+    assert(rows.asScala.exists(row ⇒ !row.contains("value") && row.getInt("key") == 1))
+    assert(rows.asScala.exists(row ⇒ !row.contains("value") && row.getInt("key") == 2))
+    assert(rows.asScala.exists(row ⇒ !row.contains("value") && row.getInt("key") == 3))
   }
 
   it should "return selected columns" in {
@@ -174,7 +175,7 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
     val rows = javaFunctions(sc).cassandraTable(ks, "test_table")
       .where("value = ?", "two").collect()
     assert(rows.size === 1)
-    assert(rows.exists(row => row.getString("value") == "two" && row.getInt("key") == 2))
+    assert(rows.asScala.exists(row => row.getString("value") == "two" && row.getInt("key") == 2))
   }
 
   it should "allow to read rows as an array of a single-column type supported by TypeConverter" in {
@@ -212,7 +213,9 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
     val rows = javaFunctions(sc)
       .cassandraTable(ks, "collections", mapColumnToListOf(classOf[String]))
       .select("l")
-      .collect().map(_.toList)
+      .collect()
+      .asScala
+      .map(asScala)
 
     rows should have size 2
     rows should contain(List("item1", "item2"))
@@ -223,7 +226,7 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
     val rows = javaFunctions(sc)
       .cassandraTable(ks, "collections", mapColumnToSetOf(classOf[String]))
       .select("s")
-      .collect().map(_.toSet)
+      .collect().asScala.map(asScala)
 
     rows should have size 2
     rows should contain(Set("item1", "item2"))
@@ -234,7 +237,7 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
     val rows = javaFunctions(sc)
       .cassandraTable(ks, "collections", mapColumnToMapOf(classOf[String], classOf[String]))
       .select("m")
-      .collect().map(_.toMap)
+      .collect().asScala.map(asScala)
 
     rows should have size 2
     rows should contain(Map("key1" → "value1", "key2" → "value2"))
@@ -244,7 +247,7 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
   it should "allow to read rows as an array of multi-column type" in {
     val rows = javaFunctions(sc)
       .cassandraTable(ks, "test_table", mapRowTo(classOf[SampleJavaBean]))
-      .collect().map(x => (x.getKey, x.getValue))
+      .collect().asScala.map(x => (x.getKey, x.getValue))
 
     rows should have size 3
     rows should contain((1, "one"))
@@ -256,7 +259,7 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
     val rows = javaFunctions(sc)
       .cassandraTable(ks, "test_table2", mapRowTo(classOf[SampleJavaBean],
         tuple.Pair.of("key", "some_key"), tuple.Pair.of("value", "some_value")))
-      .collect().map(x => (x.getKey, x.getValue))
+      .collect().asScala.map(x => (x.getKey, x.getValue))
 
     rows should have size 3
     rows should contain((1, "one"))
@@ -288,7 +291,7 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
         mapToRow(classOf[java.lang.Integer]),
         classOf[Integer],
         "key")
-      .collect().map { case (i, x) ⇒ (i, (x.getKey, x.getValue))}
+      .collect().asScala.map { case (i, x) ⇒ (i, (x.getKey, x.getValue))}
 
     rows should have size 3
     rows should contain((1, (1, "one")))
@@ -304,7 +307,7 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
         mapRowTo(classOf[SampleJavaBean]),
         mapToRow(classOf[SampleJavaBean]),
         classOf[SampleJavaBean])
-      .collect().map { case (x, i) ⇒ ((x.getKey, x.getValue), i)}
+      .collect().asScala.map { case (x, i) ⇒ ((x.getKey, x.getValue), i)}
 
     rows should have size 3
     rows should contain(((1, "one"), 1))
@@ -319,7 +322,7 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
         mapRowTo(classOf[SampleJavaBean]),
         mapToRow(classOf[SampleJavaBean]),
         classOf[SampleJavaBean])
-      .collect().map { case (x, y) ⇒ ((x.getKey, x.getValue), (y.getKey, y.getValue))}
+      .collect().asScala.map { case (x, y) ⇒ ((x.getKey, x.getValue), (y.getKey, y.getValue))}
 
     rows should have size 3
     rows should contain(((1, "one"), (1, "one")))
@@ -368,7 +371,7 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
       .select("key", "name", "addr").collect()
 
     result should have length 1
-    val row = result.head
+    val row = result.asScala.head
     row.getInt(0) should be(1)
     row.getString(1) should be("name")
 
@@ -385,7 +388,7 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
       .select("key", "value").collect()
 
     result should have length 1
-    val row = result.head
+    val row = result.asScala.head
     row.getInt(0) should be(1)
 
     val tupleValue = row.getTupleValue(1)
@@ -405,15 +408,16 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
       .select("key", "group", "value")
       .spanBy[Int](f, classOf[Int])
       .collect()
+      .asScala
       .toMap
 
     results should have size 2
     results should contain key 10
     results should contain key 20
-    results(10).size should be(3)
-    results(10).map(_.getInt("group")).toSeq should be(Seq(10, 11, 12))
-    results(20).size should be(3)
-    results(20).map(_.getInt("group")).toSeq should be(Seq(20, 21, 22))
+    results(10).asScala.size should be(3)
+    results(10).asScala.map(_.getInt("group")).toSeq should be(Seq(10, 11, 12))
+    results(20).asScala.size should be(3)
+    results(20).asScala.map(_.getInt("group")).toSeq should be(Seq(20, 21, 22))
   }
 
   it should "allow to set limit" in {
@@ -425,13 +429,13 @@ class CassandraJavaRDDSpec extends SparkCassandraITFlatSpecBase with DefaultClus
 
   it should "allow to set ascending ordering" in {
     val rdd = javaFunctions(sc).cassandraTable(ks, "wide_rows").where("key=10").withAscOrder
-    val result = rdd.collect()
-    result(0).getInt("group") should be(10)
+    val result = rdd.collect().asScala
+    result.head.getInt("group") should be(10)
   }
 
   it should "allow to set descending ordering" in {
     val rdd = javaFunctions(sc).cassandraTable(ks, "wide_rows").where("key=20").withDescOrder
-    val result = rdd.collect()
-    result(0).getInt("group") should be(22)
+    val result = rdd.collect().asScala
+    result.head.getInt("group") should be(22)
   }
 }

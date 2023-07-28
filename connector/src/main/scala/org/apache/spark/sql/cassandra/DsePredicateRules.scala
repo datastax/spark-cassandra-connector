@@ -12,6 +12,8 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.cassandra.PredicateOps.FilterOps
 import org.apache.spark.sql.sources.{EqualTo, Filter, IsNotNull}
 
+import scala.collection.mutable
+
 
 /**
   * A series of pushdown rules that only apply when connecting to Datastax Enterprise
@@ -76,7 +78,7 @@ object DsePredicateRules extends CassandraPredicateRules with Logging {
     val indexColumns = saiIndexes(table).map(_.targetColumn)
     val pushedEqualityPredicates = predicates.handledByCassandra.collect {
       case f if FilterOps.isEqualToPredicate(f) => FilterOps.columnName(f)
-    }.to[collection.mutable.Set]
+    }.to(mutable.Set)
 
     val (handledByCassandra, handledBySpark) = predicates.handledBySpark.partition { filter =>
       lazy val columnName = FilterOps.columnName(filter)

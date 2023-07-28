@@ -4,7 +4,7 @@ import com.datastax.oss.driver.api.core.CqlIdentifier
 import com.datastax.oss.driver.api.core.metadata.TokenMap
 import com.datastax.oss.driver.api.core.metadata.token.{TokenRange => DriverTokenRange}
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import scala.language.existentials
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -37,6 +37,7 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
     val endToken = tokenFactory.tokenFromString(metadata.format(range.getEnd))
     val replicas = metadata
       .getReplicas(keyspaceName, range)
+      .asScala
       .map(node =>
         DriverUtil.toAddress(node)
           .getOrElse(throw new IllegalStateException(s"Unable to determine Node Broadcast Address of $node")))
@@ -49,8 +50,8 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
     val ranges = connector.withSessionDo { session =>
       val tokenMap = Option(session.getMetadata.getTokenMap.get)
         .getOrElse(throw new IllegalStateException("Unable to determine Token Range Metadata"))
-      for (tr <- tokenMap.getTokenRanges()) yield tokenRange(tr, tokenMap)
-    }
+      for (tr <- tokenMap.getTokenRanges().asScala) yield tokenRange(tr, tokenMap)
+    }.toSeq
 
     /**
       * When we have a single Spark Partition use a single global range. This
@@ -59,7 +60,7 @@ private[connector] class CassandraPartitionGenerator[V, T <: Token[V]](
     if (splitCount == 1) {
       Seq(ranges.head.copy[V, T](tokenFactory.minToken, tokenFactory.minToken))
     } else {
-      ranges.toSeq
+      ranges
     }
   }
 

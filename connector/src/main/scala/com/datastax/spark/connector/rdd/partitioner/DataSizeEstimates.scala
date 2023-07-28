@@ -1,8 +1,8 @@
 package com.datastax.spark.connector.rdd.partitioner
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import com.datastax.spark.connector.util.Logging
-import com.datastax.oss.driver.api.core.cql.SimpleStatementBuilder
+import com.datastax.oss.driver.api.core.cql.{Row, SimpleStatementBuilder}
 import com.datastax.oss.driver.api.core.servererrors.InvalidQueryException
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.rdd.partitioner.dht.{Token, TokenFactory}
@@ -41,7 +41,7 @@ class DataSizeEstimates[V, T <: Token[V]](
             "FROM system.size_estimates " +
             "WHERE keyspace_name = ? AND table_name = ?").addPositionalValues(keyspaceName, tableName).build())
 
-        for (row <- rs.all()) yield TokenRangeSizeEstimate(
+        for (row: Row <- rs.all().asScala) yield TokenRangeSizeEstimate(
           rangeStart = tokenFactory.tokenFromString(row.getString("range_start")),
           rangeEnd = tokenFactory.tokenFromString(row.getString("range_end")),
           partitionsCount = row.getLong("partitions_count"),
@@ -53,7 +53,7 @@ class DataSizeEstimates[V, T <: Token[V]](
         // when we insert a few rows and immediately query them. However, for tiny data sets the lack
         // of size estimates is not a problem at all, because we don't want to split tiny data anyways.
         // Therefore, we're not issuing a warning if the result set was empty.
-      }
+      }.toSeq
       catch {
         case e: InvalidQueryException =>
           logError(
@@ -103,7 +103,7 @@ object DataSizeEstimates {
       def hasSizeEstimates: Boolean = {
         session.execute(
           s"SELECT * FROM system.size_estimates " +
-            s"WHERE keyspace_name = '$keyspaceName' AND table_name = '$tableName'").all().nonEmpty
+            s"WHERE keyspace_name = '$keyspaceName' AND table_name = '$tableName'").all().asScala.nonEmpty
       }
 
       val startTime = System.currentTimeMillis()
