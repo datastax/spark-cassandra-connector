@@ -19,7 +19,7 @@ Spark RDDs and Datasets/DataFrames to Cassandra tables, and execute arbitrary CQ
 in your Spark applications.
 
  - Compatible with Apache Cassandra version 2.1 or higher (see table below)
- - Compatible with Apache Spark 1.0 through 3.4 ([see table below](#version-compatibility))
+ - Compatible with Apache Spark 1.0 through 3.5 ([see table below](#version-compatibility))
  - Compatible with Scala 2.11 and 2.12
  - Exposes Cassandra tables as Spark RDDs and Datasets/DataFrames
  - Maps table rows to CassandraRow objects or tuples
@@ -45,7 +45,8 @@ corresponds to the 1.6 release. The "master" branch will normally contain
 development for the next connector release in progress.
 
 Currently, the following branches are actively supported: 
-3.4.x ([master](https://github.com/datastax/spark-cassandra-connector/tree/master)),
+3.5.x ([master](https://github.com/datastax/spark-cassandra-connector/tree/master)),
+3.4.x ([b3.4](https://github.com/datastax/spark-cassandra-connector/tree/master/b3.4)),
 3.3.x ([b3.2](https://github.com/datastax/spark-cassandra-connector/tree/b3.3)),
 3.2.x ([b3.2](https://github.com/datastax/spark-cassandra-connector/tree/b3.2)),
 3.1.x ([b3.1](https://github.com/datastax/spark-cassandra-connector/tree/b3.1)),
@@ -54,6 +55,7 @@ Currently, the following branches are actively supported:
 
 | Connector | Spark         | Cassandra             | Cassandra Java Driver | Minimum Java Version | Supported Scala Versions |
 |-----------|---------------|-----------------------| --------------------- | -------------------- | -----------------------  |
+| 3.5      | 3.5           | 2.1.5*, 2.2, 3.x, 4.x | 4.13             | 8             | 2.12  
 | 3.4       | 3.4           | 2.1.5*, 2.2, 3.x, 4.x | 4.13             | 8             | 2.12                     |
 | 3.3       | 3.3           | 2.1.5*, 2.2, 3.x, 4.x | 4.13             | 8             | 2.12                     |
 | 3.2       | 3.2           | 2.1.5*, 2.2, 3.x, 4.0 | 4.13             | 8             | 2.12                     |
@@ -105,7 +107,7 @@ This project is available on the Maven Central Repository.
 For SBT to download the connector binaries, sources and javadoc, put this in your project
 SBT config:
 
-    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "3.4.0"
+    libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "3.5.0"
 
 * The default Scala version for Spark 3.0+ is 2.12 please choose the appropriate build. See the
 [FAQ](doc/FAQ.md) for more information.

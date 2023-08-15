@@ -1,3 +1,6 @@
+3.5.0
+* Support for Apache Spark 3.5
+
 3.4.0
  * Spark 3.4.x support (SPARKC-702)
  * Fix complex field extractor after join on CassandraDirectJoinStrategy (SPARKC-700)
