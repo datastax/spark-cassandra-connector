@@ -113,7 +113,7 @@ case class CassandraBulkWrite(
 
   override def createStreamingWriterFactory(info: PhysicalWriteInfo): StreamingDataWriterFactory = getWriterFactory()
 
-  override def useCommitCoordinator(): Boolean = false
+  override def useCommitCoordinator(): Boolean = super.useCommitCoordinator()
 
   private def getWriterFactory(): CassandraDriverDataWriterFactory = {
     CassandraDriverDataWriterFactory(
