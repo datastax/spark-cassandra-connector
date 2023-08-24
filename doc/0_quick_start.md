@@ -23,7 +23,7 @@ Spark Driver and all Spark Executors.
    
     $SPARK_HOME/bin/spark-shell --packages com.datastax.spark:spark-cassandra-connector_2.12:3.5.0
     $SPARK_HOME/bin/spark-submit --packages com.datastax.spark:spark-cassandra-connector_2.12:3.5.0
-   
+
 For the list of available versions, see:
 - https://repo1.maven.org/maven2/com/datastax/spark/spark-cassandra-connector_2.12/
  
@@ -42,7 +42,11 @@ and *all* of its dependencies on the Spark Class PathTo configure
 the default Spark Configuration pass key value pairs with `--conf`
 
     $SPARK_HOME/bin/spark-shell --conf spark.cassandra.connection.host=127.0.0.1 \
+<<<<<<< HEAD
                                 --packages com.datastax.spark:spark-cassandra-connector_2.12:3.5.0
+=======
+                                --packages com.datastax.spark:spark-cassandra-connector_2.12:3.4.1
+>>>>>>> origin/master
                                 --conf spark.sql.extensions=com.datastax.spark.connector.CassandraSparkExtensions
 
 This command would set the Spark Cassandra Connector parameter 

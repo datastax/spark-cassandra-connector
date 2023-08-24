@@ -1,5 +1,9 @@
+
 3.5.0
-* Support for Apache Spark 3.5
+ * Support for Apache Spark 3.5 (SPARKC-704)
+
+3.4.1
+ * Scala 2.13 support (SPARKC-686)
 
 3.4.0
  * Spark 3.4.x support (SPARKC-702)

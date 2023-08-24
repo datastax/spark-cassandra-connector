@@ -9,8 +9,8 @@
 | What       | Where                                                                                                                                                                                                                                                                                                                                 |
 | ---------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Community  | Chat with us at [Apache Cassandra](https://cassandra.apache.org/_/community.html#discussions)                                                                                                                                                                                                                                               |
-| Scala Docs | Most Recent Release (3.4.0): [Connector API docs](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.4.0/connector/com/datastax/spark/connector/index.html), [Connector Driver docs](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.4.0/driver/com/datastax/spark/connector/index.html) |
-| Latest Production Release | [3.4.0](https://search.maven.org/artifact/com.datastax.spark/spark-cassandra-connector_2.12/3.4.0/jar)                                                                                                                                                                                                                                |
+| Scala Docs | Most Recent Release (3.4.1): [Connector API docs](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.4.1/connector/com/datastax/spark/connector/index.html), [Connector Driver docs](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.4.1/driver/com/datastax/spark/connector/index.html) |
+| Latest Production Release | [3.4.1](https://search.maven.org/artifact/com.datastax.spark/spark-cassandra-connector_2.12/3.4.1/jar)                                                                                                                                                                                                                                |
  
 ## Features
 
@@ -54,9 +54,14 @@ Currently, the following branches are actively supported:
 2.5.x ([b2.5](https://github.com/datastax/spark-cassandra-connector/tree/b2.5)).
 
 | Connector | Spark         | Cassandra             | Cassandra Java Driver | Minimum Java Version | Supported Scala Versions |
+<<<<<<< HEAD
 |-----------|---------------|-----------------------| --------------------- | -------------------- | -----------------------  |
 | 3.5      | 3.5           | 2.1.5*, 2.2, 3.x, 4.x | 4.13             | 8             | 2.12  
 | 3.4       | 3.4           | 2.1.5*, 2.2, 3.x, 4.x | 4.13             | 8             | 2.12                     |
+=======
+|-----------|---------------|-----------------------| --------------------- | -------------------- |--------------------------|
+| 3.4       | 3.4           | 2.1.5*, 2.2, 3.x, 4.x | 4.13             | 8             | 2.12, 2.13               |
+>>>>>>> origin/master
 | 3.3       | 3.3           | 2.1.5*, 2.2, 3.x, 4.x | 4.13             | 8             | 2.12                     |
 | 3.2       | 3.2           | 2.1.5*, 2.2, 3.x, 4.0 | 4.13             | 8             | 2.12                     |
 | 3.1       | 3.1           | 2.1.5*, 2.2, 3.x, 4.0 | 4.12             | 8             | 2.12                     |
@@ -79,8 +84,8 @@ Currently, the following branches are actively supported:
 ## Hosted API Docs
 API documentation for the Scala and Java interfaces are available online:
 
-### 3.4.0
-* [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.4.0/connector/com/datastax/spark/connector/index.html)
+### 3.4.1
+* [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.4.1/connector/com/datastax/spark/connector/index.html)
 
 ### 3.3.0
 * [Spark-Cassandra-Connector](https://datastax.github.io/spark-cassandra-connector/ApiDocs/3.3.0/connector/com/datastax/spark/connector/index.html)
