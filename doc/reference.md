@@ -342,7 +342,7 @@ columname will be used to set the writetime for that row.</td>
 <tr>
   <td><code>spark.cassandra.input.metrics</code></td>
   <td>true</td>
-  <td>Sets whether to record connector specific metrics on write</td>
+  <td>Sets whether to record connector specific metrics on read</td>
 </tr>
 <tr>
   <td><code>spark.cassandra.input.readsPerSec</code></td>
