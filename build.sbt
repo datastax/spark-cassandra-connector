@@ -27,8 +27,7 @@ ThisBuild / version := Publishing.Version
 
 Global / resolvers ++= Seq(
   DefaultMavenRepository,
-  Resolver.sonatypeRepo("public"),
-  "Spark-RC-350-Voting-Candidate-3" at "https://repository.apache.org/content/repositories/orgapachespark-1447"
+  Resolver.sonatypeRepo("public")
 )
 
 lazy val IntegrationTest = config("it") extend Test
