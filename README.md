@@ -138,9 +138,7 @@ See [Building And Artifacts](doc/12_building_and_artifacts.md)
 
 ## Online Training
 
-### DataStax Academy
-
-DataStax Academy provides free online training for Apache Cassandra and DataStax Enterprise. In [DS320: Analytics with Spark](https://academy.datastax.com/courses/ds320-analytics-with-apache-spark), you will learn how to effectively and efficiently solve analytical problems with Apache Spark, Apache Cassandra, and DataStax Enterprise. You will learn about Spark API, Spark-Cassandra Connector, Spark SQL, Spark Streaming, and crucial performance optimization techniques.
+In [DS320: Analytics with Spark](https://www.youtube.com/watch?v=D6PMEQAfjeU&list=PL2g2h-wyI4Sp0bqsw_IRYu1M4aPkt045x), you will learn how to effectively and efficiently solve analytical problems with Apache Spark, Apache Cassandra, and DataStax Enterprise. You will learn about Spark API, Spark-Cassandra Connector, Spark SQL, Spark Streaming, and crucial performance optimization techniques.
 
 ## Community
 
