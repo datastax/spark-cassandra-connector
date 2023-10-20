@@ -18,8 +18,7 @@ a CQL Row and uses it to determine what node in the Cassandra cluster should hos
 partitioner generates a `Token` which directly maps to the `TokenRange` of the CassandraCluster.
 Each node in the Cassandra Cluster is responsible for a specific section of the full `TokenRange`.
 
-For more information on Cassandra Data Modeling check out the resources on 
-[DataStax Academy](https://academy.datastax.com/courses/ds220-data-modeling).
+For more information on Cassandra Data Modeling check out [DS220 Data Modeling](https://www.youtube.com/watch?v=jYvKiewV-5Q&list=PL2g2h-wyI4SqIigskyJNAeL2vSTJZU_Qp).
 
 ### How to take advantage of Cassandra Partitioning in Spark
 
