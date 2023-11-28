@@ -32,7 +32,7 @@ class CassandraDataFrameSelectUdtSpec extends SparkCassandraITFlatSpecBase with 
       s"""INSERT INTO ${ks}.crash_test JSON '{"id": 1, "embeddeds": []}'"""
     )
     session.execute(
-      s"""INSERT INTO ${ks}.crash_test JSON '{"id": 1, "embeddeds": [{"a": "x1", "b": 1}, {"a": "x2", "b": 2}]}'"""
+      s"""INSERT INTO ${ks}.crash_test JSON '{"id": 2, "embeddeds": [{"a": "x1", "b": 1}, {"a": "x2", "b": 2}]}'"""
     )
   }
 
@@ -48,15 +48,11 @@ class CassandraDataFrameSelectUdtSpec extends SparkCassandraITFlatSpecBase with 
         )
       )
       .load()
+      // .cache()
 
-    val elements = df.select(col("embeddeds.b")).collect().flatMap { row =>
-      if (row.isNullAt(0)) {
-        None
-      } else {
-        Some(row.getInt(0))
-      }
+    val elements = df.select(col("id"), col("embeddeds.b")).collect().map { row =>
+      row.getAs[Seq[Int]](1).sum
     }
-    elements shouldBe Seq(2)
+    elements should contain theSameElementsAs Seq(0, 3)
   }
-
 }

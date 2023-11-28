@@ -30,8 +30,10 @@ class UnsafeRowReader(schema: StructType)
     * @param rowMetaData column names and codec available in the `row`*/
   override def read(row: Row, rowMetaData: CassandraRowMetadata): UnsafeRow = {
     val data = CassandraRow.dataFromJavaDriverRow(row, rowMetaData)
+    val sparkRow = SparkRow(data.map(toUnsafeSqlType): _*)
+    // TODO: SparkRow muss auf die Teilelemente heruntergebrochen werden
     val converterOutput = converter
-      .apply(SparkRow(data.map(toUnsafeSqlType): _*))
+      .apply(sparkRow)
       .asInstanceOf[InternalRow]
 
     projection.apply(converterOutput)
