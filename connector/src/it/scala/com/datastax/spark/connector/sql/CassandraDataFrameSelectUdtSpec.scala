@@ -83,8 +83,10 @@ class CassandraDataFrameSelectUdtSpec extends SparkCassandraITFlatSpecBase with 
   }
 
   it should "allow selecting projections in maps" in new Env {
-    val elements = df.select("embedded_map.value.b")
-    elements.show()
+    val elements = df.select("embedded_map.1.b").collect().map { row =>
+      optionalInt(row, 0).getOrElse(0)
+    }
+    elements should contain theSameElementsAs Seq(0, 1)
   }
 
   it should "allow selecting projections in sets" in new Env {

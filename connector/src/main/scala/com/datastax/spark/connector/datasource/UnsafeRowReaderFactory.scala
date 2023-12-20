@@ -60,7 +60,7 @@ object UdtProjectionDecoder {
   def buildRootDecoder(schema: StructType): SparkRow => SparkRow = {
     val childEncoders = schema.fields.map(field => buildDataTypeDecoder(field.dataType))
     row => {
-      val updated = Array.tabulate[Any](childEncoders.size) { idx =>
+      val updated = Array.tabulate[Any](childEncoders.length) { idx =>
         childEncoders(idx)(row.get(idx))
       }
       SparkRow(updated: _*)
