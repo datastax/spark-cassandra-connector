@@ -46,18 +46,26 @@ class UnsafeRowReader(schema: StructType)
   override def neededColumns: Option[Seq[ColumnRef]] = None
 }
 
-/** Helper for decoding sub selections of Cassandra UDTs. */
+/**
+ * Helper for decoding sub selections of Cassandra UDTs.
+ * (Cassandra always responds with the full UDT, however Spark exepects only selected fields).
+ *
+ * The conversion is done on the level of Scala Data types, after conversion from Cassandra
+ * and before conversion to Catalyst.
+ * */
 object UdtProjectionDecoder {
 
+  /** Build a decoder for UDT Projections. */
   def build(schema: StructType): SparkRow => SparkRow = {
-    if (!hasProjections(schema)) {
-      return identity
+    if (hasProjections(schema)) {
+      buildRootDecoder(schema)
+    } else {
+      // No need to traverse the whole tree
+      identity
     }
-
-    buildRootDecoder(schema)
   }
 
-  def buildRootDecoder(schema: StructType): SparkRow => SparkRow = {
+  private def buildRootDecoder(schema: StructType): SparkRow => SparkRow = {
     val childEncoders = schema.fields.map(field => buildDataTypeDecoder(field.dataType))
     row => {
       val updated = Array.tabulate[Any](childEncoders.length) { idx =>
@@ -69,52 +77,61 @@ object UdtProjectionDecoder {
 
   def buildDataTypeDecoder(dataType: DataType): Any => Any = {
     dataType match {
-      case s: StructType =>
-        val childDecoders = s.fields.map(field => buildDataTypeDecoder(field.dataType)).toIndexedSeq
-        input => {
-          input match {
-            case null => null
-            case udt: UDTValue =>
-              val selectedValues = s.fields.zipWithIndex.map { case (field, idx) =>
-                val originalIndex = udt.indexOf(field.name)
-                val decoded = childDecoders(idx)(udt.columnValues(originalIndex))
-                decoded.asInstanceOf[AnyRef]
-              }
-              UDTValue.apply(s.fieldNames.toIndexedSeq, selectedValues.toIndexedSeq)
-            case other =>
-              // ??
-              other
-          }
-        }
-      case a: ArrayType =>
-        val keyDecoder = buildDataTypeDecoder(a.elementType)
-        input => {
-          input match {
-            case null => null
-            case s: Seq[_] =>
-              s.map(keyDecoder)
-            case other =>
-              // ??
-              other
-          }
-        }
-      case m: MapType =>
-        val keyDecoder = buildDataTypeDecoder(m.keyType)
-        val valueDecoder = buildDataTypeDecoder(m.valueType)
-        input => {
-          input match {
-            case null => null
-            case m: Map[_, _] =>
-              m.toSeq.map { case (k, v) =>
-                keyDecoder(k) -> valueDecoder(v)
-              }.toMap
-            case other =>
-              // ??
-              other
-          }
-        }
+      case s: StructType => structTypeDecoder(s)
+      case a: ArrayType => arrayTypeDecoder(a)
+      case m: MapType => mapTypeDecoder(m)
       case _ =>
         identity
+    }
+  }
+
+  private def structTypeDecoder(structType: StructType): Any => Any = {
+    val childDecoders = structType.fields.map(field => buildDataTypeDecoder(field.dataType)).toIndexedSeq
+    input => {
+      input match {
+        case null => null
+        case udt: UDTValue =>
+          val selectedValues = structType.fields.zipWithIndex.map { case (field, idx) =>
+            val originalIndex = udt.indexOf(field.name)
+            val decoded = childDecoders(idx)(udt.columnValues(originalIndex))
+            decoded.asInstanceOf[AnyRef]
+          }
+          UDTValue.apply(structType.fieldNames.toIndexedSeq, selectedValues.toIndexedSeq)
+        case other =>
+          // ??
+          other
+      }
+    }
+  }
+
+  private def arrayTypeDecoder(arrayType: ArrayType): Any => Any = {
+    val keyDecoder = buildDataTypeDecoder(arrayType.elementType)
+    input => {
+      input match {
+        case null => null
+        case s: Seq[_] =>
+          s.map(keyDecoder)
+        case other =>
+          // ??
+          other
+      }
+    }
+  }
+
+  private def mapTypeDecoder(mapType: MapType): Any => Any = {
+    val keyDecoder = buildDataTypeDecoder(mapType.keyType)
+    val valueDecoder = buildDataTypeDecoder(mapType.valueType)
+    input => {
+      input match {
+        case null => null
+        case m: Map[_, _] =>
+          m.toSeq.map { case (k, v) =>
+            keyDecoder(k) -> valueDecoder(v)
+          }.toMap
+        case other =>
+          // ??
+          other
+      }
     }
   }
 
