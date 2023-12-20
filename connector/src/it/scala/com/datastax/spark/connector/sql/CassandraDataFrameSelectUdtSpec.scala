@@ -59,7 +59,6 @@ class CassandraDataFrameSelectUdtSpec extends SparkCassandraITFlatSpecBase with 
         )
       )
       .load()
-      // .cache() // this works
   }
 
   it should "allow selecting single elements" in new Env {
