@@ -65,17 +65,6 @@ object UdtProjectionDecoder {
     }
 
     buildRootDecoder(schema)
-    /*
-    val modified = input.get(1) match {
-      case null => null
-      case udt: UDTValue =>
-        UDTValue(udt.columnNames.drop(1), udt.columnValues.drop(1))
-      case unknown =>
-        println(s"What is this? ${unknown}")
-        unknown
-    }
-    SparkRow.apply(input.get(0), modified)
-     */
   }
 
   def buildRootDecoder(schema: StructType): SparkRow => SparkRow = {
@@ -109,11 +98,31 @@ object UdtProjectionDecoder {
         }
       case a: ArrayType =>
         val keyDecoder = buildDataTypeDecoder(a.elementType)
-        ???
+        input => {
+          input match {
+            case null => null
+            case s: Seq[_] =>
+              s.map(keyDecoder)
+            case other =>
+              // ??
+              other
+          }
+        }
       case m: MapType =>
         val keyDecoder = buildDataTypeDecoder(m.keyType)
         val valueDecoder = buildDataTypeDecoder(m.valueType)
-        ???
+        input => {
+          input match {
+            case null => null
+            case m: Map[_, _] =>
+              m.toSeq.map { case (k, v) =>
+                keyDecoder(k) -> valueDecoder(v)
+              }.toMap
+            case other =>
+              // ??
+              other
+          }
+        }
       case _ =>
         identity
     }
