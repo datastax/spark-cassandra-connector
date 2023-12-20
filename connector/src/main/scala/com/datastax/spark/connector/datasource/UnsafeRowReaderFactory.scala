@@ -13,22 +13,13 @@ import org.apache.spark.sql.{Row => SparkRow}
 class UnsafeRowReaderFactory(schema: StructType) extends RowReaderFactory[UnsafeRow] {
 
   override def rowReader(table: TableDef, selectedColumns: IndexedSeq[ColumnRef]):
-  RowReader[UnsafeRow] = new UnsafeRowReader(selectedColumns, schema)
+  RowReader[UnsafeRow] = new UnsafeRowReader(schema)
 
   override def targetClass: Class[UnsafeRow] = classOf[UnsafeRow]
 }
 
-class UnsafeRowReader(selectedColumns: IndexedSeq[ColumnRef], schema: StructType)
+class UnsafeRowReader(schema: StructType)
   extends RowReader[UnsafeRow] {
-
-  println(s"Schema: ${schema}")
-  println(s"SelectedColumns: ${selectedColumns}")
-  private val selectionSchema = StructType(
-    selectedColumns.map { columnRef =>
-      schema(columnRef.selectedAs)
-    }
-  )
-  println(s"SelectionSchema: ${selectionSchema}")
 
   @transient private lazy val projection = UnsafeProjection.create(schema)
   private val converter = CatalystTypeConverters.createToCatalystConverter(schema)
@@ -43,7 +34,6 @@ class UnsafeRowReader(selectedColumns: IndexedSeq[ColumnRef], schema: StructType
     val data = CassandraRow.dataFromJavaDriverRow(row, rowMetaData)
     val sparkRow = SparkRow(data.map(toUnsafeSqlType): _*)
     val projectionDecoded = projectionDecoder(sparkRow)
-    // TODO: SparkRow muss auf die Teilelemente heruntergebrochen werden
     val converterOutput = converter
       .apply(projectionDecoded)
       .asInstanceOf[InternalRow]
