@@ -24,6 +24,7 @@ class CassandraDataFrameSelectUdtSpec extends SparkCassandraITFlatSpecBase with 
       s"""CREATE TABLE ${ks}.crash_test(
         |        id INT,
         |        embeddeds LIST<FROZEN<embedded>>,
+        |        single embedded,
         |        PRIMARY KEY (id)
         |    )""".stripMargin
     )
@@ -32,12 +33,11 @@ class CassandraDataFrameSelectUdtSpec extends SparkCassandraITFlatSpecBase with 
       s"""INSERT INTO ${ks}.crash_test JSON '{"id": 1, "embeddeds": []}'"""
     )
     session.execute(
-      s"""INSERT INTO ${ks}.crash_test JSON '{"id": 2, "embeddeds": [{"a": "x1", "b": 1}, {"a": "x2", "b": 2}]}'"""
+      s"""INSERT INTO ${ks}.crash_test JSON '{"id": 2, "single": {"a": "a1", "b": 1}, "embeddeds": [{"a": "x1", "b": 1}, {"a": "x2", "b": 2}]}'"""
     )
   }
 
-
-  it should "allow selecting projections" in {
+  trait Env {
     val df = spark
       .read
       .format("org.apache.spark.sql.cassandra")
@@ -48,8 +48,21 @@ class CassandraDataFrameSelectUdtSpec extends SparkCassandraITFlatSpecBase with 
         )
       )
       .load()
-      // .cache()
+      // .cache() // this works
+  }
 
+  it should "allow selecting single elements" in new Env {
+    val elements = df.select(col("id"), col("single.b")).collect().map { row =>
+      if (row.isNullAt(1)) {
+        0
+      } else {
+        row.getInt(1)
+      }
+    }
+    elements should contain theSameElementsAs Seq(0, 1)
+  }
+
+  it should "allow selecting projections in lists" in new Env {
     val elements = df.select(col("id"), col("embeddeds.b")).collect().map { row =>
       row.getAs[Seq[Int]](1).sum
     }
