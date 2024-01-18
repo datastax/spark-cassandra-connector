@@ -3,7 +3,7 @@ package com.datastax.spark.connector.datasource
 import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.spark.connector.cql.TableDef
 import com.datastax.spark.connector.rdd.reader.{RowReader, RowReaderFactory}
-import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, ColumnRef, UDTValue}
+import com.datastax.spark.connector.{CassandraRow, CassandraRowMetadata, ColumnRef, TupleValue, UDTValue}
 import org.apache.spark.sql.cassandra.CassandraSQLRow.toUnsafeSqlType
 import org.apache.spark.sql.catalyst.expressions.{UnsafeProjection, UnsafeRow}
 import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
@@ -97,6 +97,18 @@ object UdtProjectionDecoder {
             decoded.asInstanceOf[AnyRef]
           }
           UDTValue.apply(structType.fieldNames.toIndexedSeq, selectedValues.toIndexedSeq)
+        case tuple: TupleValue =>
+          val selectedValues = structType.fields.zipWithIndex.map { case (field, idx) =>
+            val fieldInt = try {
+              field.name.toInt
+            } catch {
+              case _: NumberFormatException =>
+                throw new IllegalArgumentException(s"Expected integer for tuple column name, got ${field.name}")
+            }
+            val decoded = childDecoders(idx)(tuple.values(fieldInt))
+            decoded.asInstanceOf[AnyRef]
+          }
+          TupleValue(selectedValues.toIndexedSeq: _*)
         case other =>
           // ??
           other

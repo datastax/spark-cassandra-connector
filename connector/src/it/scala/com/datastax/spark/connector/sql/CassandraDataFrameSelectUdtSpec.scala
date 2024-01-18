@@ -28,12 +28,14 @@ class CassandraDataFrameSelectUdtSpec extends SparkCassandraITFlatSpecBase with 
         |        single embedded,
         |        embedded_map MAP<INT, FROZEN<embedded>>,
         |        embedded_set SET<FROZEN<embedded>>,
+        |        simple_tuple TUPLE <TEXT, INT>,
+        |        simple_tuples LIST<FROZEN<TUPLE<TEXT, INT>>>,
         |        PRIMARY KEY (id)
         |    )""".stripMargin
     )
 
     session.execute(
-      s"""INSERT INTO ${ks}.crash_test JSON '{"id": 1, "embeddeds": [], "embedded_map": {}, "embedded_set": []}'"""
+      s"""INSERT INTO ${ks}.crash_test JSON '{"id": 1, "embeddeds": [], "embedded_map": {}, "embedded_set": [], "simple_tuples": []}'"""
     )
     session.execute(
       s"""INSERT INTO ${ks}.crash_test JSON
@@ -42,7 +44,9 @@ class CassandraDataFrameSelectUdtSpec extends SparkCassandraITFlatSpecBase with 
          |  "single": {"a": "a1", "b": 1},
          |  "embeddeds": [{"a": "x1", "b": 1}, {"a": "x2", "b": 2}],
          |  "embedded_map": {"1": {"a": "x1", "b": 1}, "2": {"a": "x2", "b": 2}},
-         |  "embedded_set": [{"a": "x1", "b": 1}, {"a": "x2", "b": 2}]
+         |  "embedded_set": [{"a": "x1", "b": 1}, {"a": "x2", "b": 2}],
+         |  "simple_tuple": ["x1", 1],
+         |  "simple_tuples": [["x1", 1], ["x2", 2]]
          |}'
          |""".stripMargin
     )
@@ -90,6 +94,19 @@ class CassandraDataFrameSelectUdtSpec extends SparkCassandraITFlatSpecBase with 
 
   it should "allow selecting projections in sets" in new Env {
     val elements = df.select("embedded_set.b").collect().map { row =>
+      row.getAs[Seq[Int]](0).sum
+    }
+    elements should contain theSameElementsAs Seq(0, 3)
+  }
+
+  it should "allow single elements of tuples" in new Env {
+    df.select("simple_tuple.1").collect().map { row =>
+      optionalInt(row, 0).getOrElse(0)
+    } should contain theSameElementsAs Seq(0, 1)
+  }
+
+  it should "allow selecting projections of tuples" in new Env {
+    val elements = df.select("simple_tuples.1").collect().map { row =>
       row.getAs[Seq[Int]](0).sum
     }
     elements should contain theSameElementsAs Seq(0, 3)
