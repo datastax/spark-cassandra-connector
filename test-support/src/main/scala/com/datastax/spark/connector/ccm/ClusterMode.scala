@@ -1,6 +1,6 @@
 package com.datastax.spark.connector.ccm
 
-import com.datastax.spark.connector.ccm.mode.{ClusterModeExecutor, DebugModeExecutor, DeveloperModeExecutor, StandardModeExecutor}
+import com.datastax.spark.connector.ccm.mode.{ClusterModeExecutor, DebugModeExecutor, DeveloperModeExecutor, ExistingModeExecutor, StandardModeExecutor}
 
 sealed trait ClusterMode {
   def executor(config: CcmConfig): ClusterModeExecutor
@@ -37,9 +37,13 @@ object ClusterModes {
     def executor(config: CcmConfig): ClusterModeExecutor = new DeveloperModeExecutor(config)
   }
 
+  case object Existing extends ClusterMode {
+    override def executor(config: CcmConfig): ClusterModeExecutor = new ExistingModeExecutor(config)
+  }
+
   def fromEnvVar: ClusterMode = {
     // we could use Reflection lib or scala-reflect (both are not present on CP at the moment)
-    val knownModes = Seq(Standard, Debug, Developer)
+    val knownModes = Seq(Standard, Debug, Developer, Existing)
 
     sys.env.get("CCM_CLUSTER_MODE").flatMap { modeName =>
       knownModes.collectFirst {
