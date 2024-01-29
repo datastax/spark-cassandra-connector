@@ -20,7 +20,7 @@ in your Spark applications.
 
  - Compatible with Apache Cassandra version 2.1 or higher (see table below)
  - Compatible with Apache Spark 1.0 through 3.4 ([see table below](#version-compatibility))
- - Compatible with Scala 2.11 and 2.12
+ - Compatible with Scala 2.11, 2.12 and 2.13
  - Exposes Cassandra tables as Spark RDDs and Datasets/DataFrames
  - Maps table rows to CassandraRow objects or tuples
  - Offers customizable object mapper for mapping rows to objects of user-defined classes

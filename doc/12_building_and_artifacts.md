@@ -3,7 +3,7 @@
 ## Building
 
 ### Scala Versions
-You can choose to build, assemble and run both Spark and the Spark Cassandra Connector against Scala 2.11 or 2.12.
+You can choose to build, assemble and run both Spark and the Spark Cassandra Connector against Scala 2.11, 2.12 or 2.13.
 
 As of Spark Cassandra Connector 2.5.0 the build defaults to Scala 2.12. To build 2.11 artifacts, use `++2.11.12` switch 
 in your sbt commands, e.g. `sbt/sbt ++2.11.12 package`.
