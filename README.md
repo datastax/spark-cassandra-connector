@@ -20,7 +20,7 @@ in your Spark applications.
 
  - Compatible with Apache Cassandra version 2.1 or higher (see table below)
  - Compatible with Apache Spark 1.0 through 3.5 ([see table below](#version-compatibility))
- - Compatible with Scala 2.11 and 2.12
+ - Compatible with Scala 2.11, 2.12 and 2.13
  - Exposes Cassandra tables as Spark RDDs and Datasets/DataFrames
  - Maps table rows to CassandraRow objects or tuples
  - Offers customizable object mapper for mapping rows to objects of user-defined classes
@@ -46,7 +46,7 @@ development for the next connector release in progress.
 
 Currently, the following branches are actively supported: 
 3.5.x ([master](https://github.com/datastax/spark-cassandra-connector/tree/master)),
-3.4.x ([b3.4](https://github.com/datastax/spark-cassandra-connector/tree/master/b3.4)),
+3.4.x ([b3.4](https://github.com/datastax/spark-cassandra-connector/tree/b3.4)),
 3.3.x ([b3.2](https://github.com/datastax/spark-cassandra-connector/tree/b3.3)),
 3.2.x ([b3.2](https://github.com/datastax/spark-cassandra-connector/tree/b3.2)),
 3.1.x ([b3.1](https://github.com/datastax/spark-cassandra-connector/tree/b3.1)),
@@ -140,9 +140,7 @@ See [Building And Artifacts](doc/12_building_and_artifacts.md)
 
 ## Online Training
 
-### DataStax Academy
-
-DataStax Academy provides free online training for Apache Cassandra and DataStax Enterprise. In [DS320: Analytics with Spark](https://academy.datastax.com/courses/ds320-analytics-with-apache-spark), you will learn how to effectively and efficiently solve analytical problems with Apache Spark, Apache Cassandra, and DataStax Enterprise. You will learn about Spark API, Spark-Cassandra Connector, Spark SQL, Spark Streaming, and crucial performance optimization techniques.
+In [DS320: Analytics with Spark](https://www.youtube.com/watch?v=D6PMEQAfjeU&list=PL2g2h-wyI4Sp0bqsw_IRYu1M4aPkt045x), you will learn how to effectively and efficiently solve analytical problems with Apache Spark, Apache Cassandra, and DataStax Enterprise. You will learn about Spark API, Spark-Cassandra Connector, Spark SQL, Spark Streaming, and crucial performance optimization techniques.
 
 ## Community
 
