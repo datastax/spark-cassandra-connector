@@ -248,7 +248,7 @@ trait SparkCassandraITSpecBase
 
   def getCassandraScan(plan: SparkPlan): CassandraScan = {
     plan.collectLeaves.collectFirst{
-      case BatchScanExec(_, cassandraScan: CassandraScan, _, _, _, _, _, _, _) => cassandraScan
+      case BatchScanExec(_, cassandraScan: CassandraScan, _, _, _, _) => cassandraScan
     }.getOrElse(throw new IllegalArgumentException("No Cassandra Scan Found"))
   }
 

@@ -1,6 +1,7 @@
 package org.apache.spark.sql.datastax.test.empty
 
 import org.apache.spark.sql.catalyst.plans.logical.LocalRelation
+import org.apache.spark.sql.catalyst.types.DataTypeUtils
 import org.apache.spark.sql.execution.streaming.{LongOffset, Offset, Source}
 import org.apache.spark.sql.sources.StreamSourceProvider
 import org.apache.spark.sql.types.{IntegerType, StructField, StructType}
@@ -33,7 +34,7 @@ class DefaultSource extends StreamSourceProvider {
     }
 
     override def getBatch(start: Option[Offset], end: Offset): DataFrame = {
-      Dataset.ofRows(sqlContext.sparkSession, LocalRelation(schema.toAttributes, isStreaming = true))
+      Dataset.ofRows(sqlContext.sparkSession, LocalRelation(DataTypeUtils.toAttributes(schema), isStreaming = true))
     }
 
     override def stop() {}

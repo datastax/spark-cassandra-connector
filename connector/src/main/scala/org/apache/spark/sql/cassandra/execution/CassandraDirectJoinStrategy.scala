@@ -147,7 +147,7 @@ object CassandraDirectJoinStrategy extends Logging {
     */
   def getScanExec(plan: SparkPlan): Option[BatchScanExec] = {
     plan.collectFirst {
-      case exec @ BatchScanExec(_, _: CassandraScan, _, _, _, _, _, _, _) => exec
+      case exec @ BatchScanExec(_, _: CassandraScan, _, _, _, _) => exec
     }
   }
 
@@ -205,7 +205,7 @@ object CassandraDirectJoinStrategy extends Logging {
   def hasCassandraChild[T <: QueryPlan[T]](plan: T): Boolean = {
     plan.children.size == 1 && plan.children.exists {
       case DataSourceV2ScanRelation(DataSourceV2Relation(_: CassandraTable, _, _, _, _), _, _, _, _) => true
-      case BatchScanExec(_, _: CassandraScan, _, _, _, _, _, _, _) => true
+      case BatchScanExec(_, _: CassandraScan, _, _, _, _) => true
       case _ => false
     }
   }
@@ -238,7 +238,7 @@ object CassandraDirectJoinStrategy extends Logging {
       originalOutput: Seq[Attribute]): SparkPlan = {
     val reordered = plan match {
       //This may be the only node in the Plan
-      case BatchScanExec(_, _: CassandraScan, _, _, _, _, _, _, _) => directJoin
+      case BatchScanExec(_, _: CassandraScan, _, _, _, _) => directJoin
       // Plan has children
       case normalPlan => normalPlan.transform {
         case penultimate if hasCassandraChild(penultimate) =>
