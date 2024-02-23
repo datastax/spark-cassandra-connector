@@ -1,6 +1,7 @@
 
 3.5.0
  * Support for Apache Spark 3.5 (SPARKC-704)
+ * Fix: Projection of Sub Elements (SPARKC-699)
 
 3.4.1
  * Scala 2.13 support (SPARKC-686)
