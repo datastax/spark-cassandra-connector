@@ -13,32 +13,38 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        scala:  [2.12.11, 2.13.11]
-        db-version: [3.11.10, 4.0-rc2, 6.8.13]
+        scala:  [2.12.19, 2.13.13]
+        db-version: [3.11.17, 4.0.12, 4.1.4, 5.0-beta1, dse-6.8.44]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: ccm pip installation
         uses: BSFishy/pip-action@v1
         with:
-          packages: git+https://github.com/riptano/ccm.git@435f3210e16d0b648fbf33d6390d5ab4c9e630d4
+          packages: git+https://github.com/riptano/ccm.git@d74db63d75112908a77b6c80757df9343fdc3338
 
-      - name: Setup Scala
-        uses: olafurpg/setup-scala@v10
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          java-version: "adopt@1.8"
+          distribution: "temurin"
+          java-version: | # order is important, the last one is the default which will be used by SBT
+            11
+            8
 
       - name: sbt tests
         env:
           TEST_PARALLEL_TASKS: 1
           CCM_CASSANDRA_VERSION: ${{ matrix.db-version }}
           PUBLISH_VERSION: test
+          JAVA8_HOME: ${{ env.JAVA_HOME_8_X64 }}
+          JAVA11_HOME: ${{ env.JAVA_HOME_11_X64 }}
         run: sbt/sbt ++${{ matrix.scala }} test it:test
 
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v3
+        uses: mikepenz/action-junit-report@v4
         if: always()
         with:
           report_paths: '**/target/test-reports/*.xml'

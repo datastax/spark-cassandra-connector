@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.cql.sai
 
 import com.datastax.spark.connector.SparkCassandraITWordSpecBase
-import com.datastax.spark.connector.ccm.CcmConfig.V6_8_3
+import com.datastax.spark.connector.ccm.CcmConfig.DSE_V6_8_3
 import com.datastax.spark.connector.cluster.DefaultCluster
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.sources._
@@ -9,7 +9,7 @@ import org.apache.spark.sql.sources._
 class IndexedStaticSpec extends SparkCassandraITWordSpecBase with DefaultCluster with SaiBaseSpec {
 
   override def beforeClass {
-    dseFrom(V6_8_3) {
+    dseFrom(DSE_V6_8_3) {
       conn.withSessionDo { session =>
         createKeyspace(session, ks)
         session.execute(
@@ -28,11 +28,11 @@ class IndexedStaticSpec extends SparkCassandraITWordSpecBase with DefaultCluster
     }
   }
   "Index on static columns" should {
-    "allow for predicate push down" in dseFrom(V6_8_3) {
+    "allow for predicate push down" in dseFrom(DSE_V6_8_3) {
       assertPushDown(df("static_test").filter(col("static_col_1") === 1))
     }
 
-    "not cause predicate push down for non-indexed static columns" in dseFrom(V6_8_3) {
+    "not cause predicate push down for non-indexed static columns" in dseFrom(DSE_V6_8_3) {
       assertNoPushDown(df("static_test").filter(col("static_col_2") === 1))
     }
   }

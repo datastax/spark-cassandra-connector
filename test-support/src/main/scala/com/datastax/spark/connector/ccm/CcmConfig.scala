@@ -2,7 +2,7 @@ package com.datastax.spark.connector.ccm
 
 import java.io.{File, IOException, InputStream}
 import java.net.InetSocketAddress
-import java.nio.file.{Files, Path, Paths, StandardCopyOption}
+import java.nio.file.{Files, Paths, StandardCopyOption}
 
 import com.datastax.oss.driver.api.core.Version
 import com.datastax.spark.connector.ccm.CcmConfig._
@@ -19,10 +19,11 @@ case class CcmConfig(
     createOptions: List[String] = List(),
     dseWorkloads: List[String] = List(),
     jmxPortOffset: Int = 0,
-    version: Version = Version.parse(System.getProperty("ccm.version", "3.11.6")),
+    version: Version = Version.parse(System.getProperty("ccm.version", "4.1.4")),
     installDirectory: Option[String] = Option(System.getProperty("ccm.directory")),
     installBranch: Option[String] = Option(System.getProperty("ccm.branch")),
     dseEnabled: Boolean = Option(System.getProperty("ccm.dse")).exists(_.toLowerCase == "true"),
+    javaVersion: Option[Int] = None,
     mode: ClusterMode = ClusterModes.fromEnvVar) {
 
   def withSsl(keystorePath: String, keystorePassword: String): CcmConfig = {
@@ -56,11 +57,11 @@ case class CcmConfig(
       version
     } else {
       val stableVersion = version.nextStable()
-      if (stableVersion.compareTo(V6_0_0) >= 0) {
-        V4_0_0
-      } else if (stableVersion.compareTo(V5_1_0) >= 0) {
+      if (stableVersion.compareTo(DSE_V6_0_0) >= 0) {
+        Version.V4_0_0
+      } else if (stableVersion.compareTo(DSE_V5_1_0) >= 0) {
         V3_10
-      } else if (stableVersion.compareTo(V5_0_0) >= 0) {
+      } else if (stableVersion.compareTo(DSE_V5_0_0) >= 0) {
         V3_0_15
       } else {
         V2_1_19
@@ -116,16 +117,16 @@ object CcmConfig {
   val DEFAULT_SERVER_LOCALHOST_KEYSTORE_PATH: String = "/server_localhost.keystore"
 
   // DSE versions
-  val V6_8_5: Version = Version.parse("6.8.5")
-  val V6_8_3: Version = Version.parse("6.8.3")
-  val V6_8_0: Version = Version.parse("6.8.0")
-  val V6_7_0: Version = Version.parse("6.7.0")
-  val V6_0_0: Version = Version.parse("6.0.0")
-  val V5_1_0: Version = Version.parse("5.1.0")
-  val V5_0_0: Version = Version.parse("5.0.0")
+  val DSE_V6_8_5: Version = Version.parse("6.8.5")
+  val DSE_V6_8_3: Version = Version.parse("6.8.3")
+  val DSE_V6_7_0: Version = Version.parse("6.7.0")
+  val DSE_V6_0_0: Version = Version.parse("6.0.0")
+  val DSE_V5_1_0: Version = Version.parse("5.1.0")
+  val DSE_V5_0_0: Version = Version.parse("5.0.0")
 
   // C* versions
-  val V4_0_0: Version = Version.parse("4.0.0")
+  val V5_0_0: Version = Version.parse("5.0-alpha1")
+  val V4_1_0: Version = Version.parse("4.1.0")
   val V3_6_0: Version = Version.parse("3.6.0")
   val V3_10: Version = Version.parse("3.10")
   val V3_0_15: Version = Version.parse("3.0.15")

@@ -4,20 +4,22 @@ import java.io.IOException
 import java.time.{Instant, LocalDate, ZoneId, ZonedDateTime}
 import java.util.Date
 import com.datastax.oss.driver.api.core.DefaultProtocolVersion._
+import com.datastax.oss.driver.api.core.Version.V4_0_0
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption
 import com.datastax.oss.driver.api.core.cql.SimpleStatement
 import com.datastax.oss.driver.api.core.cql.SimpleStatement._
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.ccm.CcmConfig.{V3_6_0, V4_0_0, V6_7_0}
+import com.datastax.spark.connector.ccm.CcmConfig.{DSE_V6_7_0, V3_6_0}
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf}
 import com.datastax.spark.connector.mapper.{DefaultColumnMapper, JavaBeanColumnMapper, JavaTestBean, JavaTestUDTBean}
 import com.datastax.spark.connector.rdd.partitioner.dht.TokenFactory
 import com.datastax.spark.connector.types.{CassandraOption, TypeConverter}
 import com.datastax.spark.connector.util.RuntimeUtil
+import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException
 
-import scala.jdk.CollectionConverters._
 import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
 import scala.reflect.runtime.universe.typeTag
 
 case class KeyValue(key: Int, group: Long, value: String)
@@ -1108,14 +1110,13 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
     )
   }
 
-  it should "throw a meaningful exception when reading a table view" in from(cassandra = V4_0_0, dse = V6_7_0) {
+  it should "throw a meaningful exception when reading a table view" in from(cassandra = V4_0_0, dse = DSE_V6_7_0) {
     import org.apache.spark.sql.cassandra._
 
-    val ex = intercept[IllegalArgumentException] {
+    intercept[NoSuchNamespaceException] {
       val data = spark.read.cassandraFormat("sstable_tasks", "system_views").load()
       data.show()
     }
-    ex.getMessage should contain("Table views are not supported")
   }
 
   it should "throw an exception when trying to write to a Materialized View" in skipIfProtocolVersionLT(V4){

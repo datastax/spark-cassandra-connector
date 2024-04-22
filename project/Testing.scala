@@ -49,19 +49,19 @@ object Testing {
     * CCM_IS_DSE env setting takes precedence over this guess.
     */
   private def isDse(version: Option[String]): Boolean = {
-    version.flatMap(v => Try(v.split('.').head.toInt >= 5).toOption).getOrElse(false)
+    version.exists(_.startsWith("dse-"))
   }
 
   def getCCMJvmOptions = {
     val dbVersion = sys.env.get("CCM_CASSANDRA_VERSION")
-    val ccmCassVersion = dbVersion.map(version => s"-Dccm.version=$version")
-    val ccmCassVersion2 = dbVersion.map(version => s"-Dcassandra.version=$version")
+    val ccmVersion = dbVersion.map(version => s"-Dccm.version=${version.stripPrefix("dse-")}")
+    val cassandraVersion = dbVersion.map(version => s"-Dcassandra.version=${version.stripPrefix("dse-")}")
     val ccmDse = sys.env.get("CCM_IS_DSE").map(_.toLowerCase == "true").orElse(Some(isDse(dbVersion)))
       .map(isDSE => s"-Dccm.dse=$isDSE")
     val cassandraDirectory = sys.env.get("CCM_INSTALL_DIR").map(dir => s"-Dcassandra.directory=$dir")
     val ccmJava = sys.env.get("CCM_JAVA_HOME").orElse(sys.env.get("JAVA_HOME")).map(dir => s"-Dccm.java.home=$dir")
     val ccmPath = sys.env.get("CCM_JAVA_HOME").orElse(sys.env.get("JAVA_HOME")).map(dir => s"-Dccm.path=$dir/bin")
-    val options = Seq(ccmCassVersion, ccmDse, ccmCassVersion2, cassandraDirectory, ccmJava, ccmPath)
+    val options = Seq(ccmVersion, ccmDse, cassandraVersion, cassandraDirectory, ccmJava, ccmPath)
     options
   }
 

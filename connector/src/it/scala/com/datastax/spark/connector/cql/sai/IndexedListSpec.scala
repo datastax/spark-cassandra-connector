@@ -1,14 +1,14 @@
 package com.datastax.spark.connector.cql.sai
 
 import com.datastax.spark.connector.SparkCassandraITWordSpecBase
-import com.datastax.spark.connector.ccm.CcmConfig.V6_8_3
+import com.datastax.spark.connector.ccm.CcmConfig.DSE_V6_8_3
 import com.datastax.spark.connector.cluster.DefaultCluster
 
 
 class IndexedListSpec extends SparkCassandraITWordSpecBase with DefaultCluster with SaiCollectionBaseSpec {
 
   override def beforeClass {
-    dseFrom(V6_8_3) {
+    dseFrom(DSE_V6_8_3) {
       conn.withSessionDo { session =>
         createKeyspace(session, ks)
         session.execute(

@@ -1,7 +1,7 @@
 package com.datastax.spark.connector.cql.sai
 
 import com.datastax.spark.connector.SparkCassandraITWordSpecBase
-import com.datastax.spark.connector.ccm.CcmConfig.V6_8_3
+import com.datastax.spark.connector.ccm.CcmConfig.DSE_V6_8_3
 import com.datastax.spark.connector.cluster.DefaultCluster
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.sources._
@@ -9,7 +9,7 @@ import org.apache.spark.sql.sources._
 class IndexedKeySpec extends SparkCassandraITWordSpecBase with DefaultCluster with SaiBaseSpec {
 
   override def beforeClass {
-    dseFrom(V6_8_3) {
+    dseFrom(DSE_V6_8_3) {
       conn.withSessionDo { session =>
         createKeyspace(session, ks)
         session.execute(
@@ -46,7 +46,7 @@ class IndexedKeySpec extends SparkCassandraITWordSpecBase with DefaultCluster wi
   }
 
   "Index on partition key columns" should {
-    "allow for predicate push down for indexed parts of the partition key" in dseFrom(V6_8_3) {
+    "allow for predicate push down for indexed parts of the partition key" in dseFrom(DSE_V6_8_3) {
       assertPushedPredicate(
         df("pk_test").filter(col("pk_1") === 1),
         pushedPredicate = EqualTo("pk_1", 1))
@@ -64,13 +64,13 @@ class IndexedKeySpec extends SparkCassandraITWordSpecBase with DefaultCluster wi
         pushedPredicate = GreaterThanOrEqual("pk_2", 1))
     }
 
-    "allow for multiple predicate push down for the same indexed part of the partition key" in dseFrom(V6_8_3) {
+    "allow for multiple predicate push down for the same indexed part of the partition key" in dseFrom(DSE_V6_8_3) {
       assertPushedPredicate(
         df("pk_test").filter(col("pk_3") < 10 and col("pk_3") > 0),
         pushedPredicate = LessThan("pk_3", 10), GreaterThan("pk_3", 0))
     }
 
-    "allow for multiple range predicate push down for different indexed parts of the partition key" in dseFrom(V6_8_3) {
+    "allow for multiple range predicate push down for different indexed parts of the partition key" in dseFrom(DSE_V6_8_3) {
       assertPushedPredicate(
         df("pk_test").filter(col("pk_3") < 10 and col("pk_1") > 0),
         pushedPredicate = LessThan("pk_3", 10), GreaterThan("pk_1", 0))
@@ -82,7 +82,7 @@ class IndexedKeySpec extends SparkCassandraITWordSpecBase with DefaultCluster wi
         pushedPredicate = EqualTo("pk_3", 10), LessThan("v_1", 1))
     }
 
-    "allow for range predicate push down for the partition key" in dseFrom(V6_8_3) {
+    "allow for range predicate push down for the partition key" in dseFrom(DSE_V6_8_3) {
       assertPushedPredicate(
         df("pk_test").filter(col("pk_3") < 10 and col("pk_1") > 0 and col("pk_2") >= 0),
         pushedPredicate = LessThan("pk_3", 10), GreaterThan("pk_1", 0), GreaterThanOrEqual("pk_2", 0))
@@ -91,7 +91,7 @@ class IndexedKeySpec extends SparkCassandraITWordSpecBase with DefaultCluster wi
         pushedPredicate = EqualTo("pk_3", 10), LessThan("pk_1", 6), EqualTo("pk_2", 1))
     }
 
-    "not allow for regular column predicate push down if any part of the partition key has an IN clause" in dseFrom(V6_8_3) {
+    "not allow for regular column predicate push down if any part of the partition key has an IN clause" in dseFrom(DSE_V6_8_3) {
       assertNonPushedColumns(
         df("pk_test").filter("pk_1 = 1 and pk_2 = 2 and pk_3 in(1, 3) and v_1 < 5"),
         nonPushedColumns = "v_1")
@@ -103,18 +103,18 @@ class IndexedKeySpec extends SparkCassandraITWordSpecBase with DefaultCluster wi
         nonPushedColumns = "v_1")
     }
 
-    "allow for regular column predicate push down if a part of the clustering key has an IN clause" in dseFrom(V6_8_3) {
+    "allow for regular column predicate push down if a part of the clustering key has an IN clause" in dseFrom(DSE_V6_8_3) {
       assertPushedPredicate(
         df("pk_test").filter("pk_1 = 1 and pk_2 = 2 and pk_3 = 3 and ck_1 in (1,2) and v_1 < 5"),
         pushedPredicate = EqualTo("pk_1", 1), EqualTo("pk_2", 2), EqualTo("pk_3", 3), In("ck_1", Array(1, 2)), LessThan("v_1", 5))
     }
 
-    "not allow for push down if more than one equality predicate is defined" in dseFrom(V6_8_3) {
+    "not allow for push down if more than one equality predicate is defined" in dseFrom(DSE_V6_8_3) {
       val data = df("pk_test").filter(col("pk_1") === 7 and col("pk_1") === 10)
       assertPushedPredicate(data, pushedPredicate = EqualTo("pk_1", 7))
     }
 
-    "allow only for equality push down if equality and range predicates are defined for the same pk column" in dseFrom(V6_8_3) {
+    "allow only for equality push down if equality and range predicates are defined for the same pk column" in dseFrom(DSE_V6_8_3) {
       val data = df("pk_test").filter(col("pk_1") === 7 and col("pk_1") < 10)
       assertPushedPredicate(data, pushedPredicate = EqualTo("pk_1", 7))
       data.count() shouldBe 2
@@ -122,13 +122,13 @@ class IndexedKeySpec extends SparkCassandraITWordSpecBase with DefaultCluster wi
   }
 
   "Index on clustering key columns" should {
-    "allow for predicate push down for indexed parts of the clustering key" in dseFrom(V6_8_3) {
+    "allow for predicate push down for indexed parts of the clustering key" in dseFrom(DSE_V6_8_3) {
       assertPushedPredicate(
         df("pk_test").filter(col("ck_2") === 1),
         pushedPredicate = EqualTo("ck_2", 1))
     }
 
-    "not allow for predicate push down for non-indexed parts of the clustering key" in dseFrom(V6_8_3) {
+    "not allow for predicate push down for non-indexed parts of the clustering key" in dseFrom(DSE_V6_8_3) {
       assertNoPushDown(df("pk_test").filter(col("ck_3") === 1))
     }
   }

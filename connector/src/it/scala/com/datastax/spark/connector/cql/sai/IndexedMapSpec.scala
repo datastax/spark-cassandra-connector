@@ -1,15 +1,15 @@
 package com.datastax.spark.connector.cql.sai
 
 import com.datastax.spark.connector.SparkCassandraITWordSpecBase
-import com.datastax.spark.connector.ccm.CcmConfig.V6_8_3
+import com.datastax.spark.connector.ccm.CcmConfig.DSE_V6_8_3
 import com.datastax.spark.connector.cluster.DefaultCluster
-import org.apache.spark.sql.functions.{col, _}
+import org.apache.spark.sql.functions._
 import org.apache.spark.sql.sources.EqualTo
 
 class IndexedMapSpec extends SparkCassandraITWordSpecBase with DefaultCluster with SaiBaseSpec {
 
   override def beforeClass {
-    dseFrom(V6_8_3) {
+    dseFrom(DSE_V6_8_3) {
       conn.withSessionDo { session =>
         createKeyspace(session)
         session.execute(
@@ -41,66 +41,66 @@ class IndexedMapSpec extends SparkCassandraITWordSpecBase with DefaultCluster wi
 
   // TODO: SPARKC-630
   "Index on map keys" ignore {
-    "allow for contains predicate push down on keys" in dseFrom(V6_8_3) {
+    "allow for contains predicate push down on keys" in dseFrom(DSE_V6_8_3) {
       // SELECT * from test_storage_attached_index_spec.map_test WHERE map_col_1 CONTAINS KEY 2;
       assertPushDown(df("map_test").filter(array_contains(map_keys(col("map_col_1")), 2)))
     }
 
-    "not allow for contains predicate push down on values" in dseFrom(V6_8_3) {
+    "not allow for contains predicate push down on values" in dseFrom(DSE_V6_8_3) {
       assertNoPushDown(df("map_test").filter(array_contains(map_values(col("map_col_1")), 2)))
     }
 
-    "not allow for equality predicate push down" in dseFrom(V6_8_3) {
+    "not allow for equality predicate push down" in dseFrom(DSE_V6_8_3) {
       assertNoPushDown(df("map_test").filter(col("map_col_1").getItem(5) === 4))
     }
   }
 
   // TODO: SPARKC-630
   "Index on map values" ignore {
-    "allow for contains predicate push down on values" in dseFrom(V6_8_3) {
+    "allow for contains predicate push down on values" in dseFrom(DSE_V6_8_3) {
       // SELECT * from test_storage_attached_index_spec.map_test WHERE map_col_2 CONTAINS 2;
       assertPushDown(df("map_test").filter(array_contains(map_values(col("map_col_2")), 2)))
     }
 
-    "not allow for contains predicate push down on keys" in dseFrom(V6_8_3) {
+    "not allow for contains predicate push down on keys" in dseFrom(DSE_V6_8_3) {
       assertNoPushDown(df("map_test").filter(array_contains(map_keys(col("map_col_2")), 2)))
     }
 
-    "not allow for equality predicate push down" in dseFrom(V6_8_3) {
+    "not allow for equality predicate push down" in dseFrom(DSE_V6_8_3) {
       assertNoPushDown(df("map_test").filter(col("map_col_2").getItem(5) === 4))
     }
   }
 
   // TODO: SPARKC-630
   "Index on map entries" ignore {
-    "allow for equality predicate push down" in dseFrom(V6_8_3) {
+    "allow for equality predicate push down" in dseFrom(DSE_V6_8_3) {
       // SELECT * from test_storage_attached_index_spec.map_test WHERE map_col_3[5] = 4;
       assertPushDown(df("map_test").filter(col("map_col_3").getItem(5) === 4))
     }
 
-    "not allow for predicate push down different than equality" in dseFrom(V6_8_3) {
+    "not allow for predicate push down different than equality" in dseFrom(DSE_V6_8_3) {
       assertNoPushDown(df("map_test").filter(col("map_col_3").getItem(5) > 3))
       assertNoPushDown(df("map_test").filter(col("map_col_3").getItem(5) >= 3))
     }
 
-    "not allow for contains predicate push down on keys" in dseFrom(V6_8_3) {
+    "not allow for contains predicate push down on keys" in dseFrom(DSE_V6_8_3) {
       assertNoPushDown(df("map_test").filter(array_contains(map_keys(col("map_col_3")), 2)))
     }
 
-    "not allow for contains predicate push down on values" in dseFrom(V6_8_3) {
+    "not allow for contains predicate push down on values" in dseFrom(DSE_V6_8_3) {
       assertNoPushDown(df("map_test").filter(array_contains(map_values(col("map_col_3")), 2)))
     }
   }
 
   // TODO: SPARKC-630: Unsupported literal type class scala.collection.immutable.Map$Map1 Map(102 -> 112)
   "Index on full map" ignore {
-    "allow for equality predicate push down" in dseFrom(V6_8_3) {
+    "allow for equality predicate push down" in dseFrom(DSE_V6_8_3) {
       val data = df("map_test").filter(col("map_col_4") === Map(102 -> 112))
       // spark changes array to wrapped array
       assertPushedPredicate(data, pushedPredicate = EqualTo("map_col_4", Map(102 -> 112)))
     }
 
-    "allow for only one equality predicate push down when more than one is provided" in dseFrom(V6_8_3) {
+    "allow for only one equality predicate push down when more than one is provided" in dseFrom(DSE_V6_8_3) {
       val data = df("map_test").filter(col("map_col_4") === Map(102 -> 112) and col("map_col_4") === Map(107 -> 117))
       assertPushedPredicate(data, pushedPredicate = EqualTo("map_col_4", Map(102 -> 112)))
     }

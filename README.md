@@ -53,26 +53,27 @@ Currently, the following branches are actively supported:
 3.0.x ([b3.0](https://github.com/datastax/spark-cassandra-connector/tree/b3.0)) and 
 2.5.x ([b2.5](https://github.com/datastax/spark-cassandra-connector/tree/b2.5)).
 
-| Connector | Spark         | Cassandra             | Cassandra Java Driver | Minimum Java Version | Supported Scala Versions |
-|-----------|---------------|-----------------------| --------------------- | -------------------- | -----------------------  |
-| 3.5       | 3.5           | 2.1.5*, 2.2, 3.x, 4.x | 4.13             | 8              | 2.12, 2.13              |  
-| 3.4       | 3.4           | 2.1.5*, 2.2, 3.x, 4.x | 4.13             | 8             | 2.12, 2.13               |
-| 3.3       | 3.3           | 2.1.5*, 2.2, 3.x, 4.x | 4.13             | 8             | 2.12                     |
-| 3.2       | 3.2           | 2.1.5*, 2.2, 3.x, 4.0 | 4.13             | 8             | 2.12                     |
-| 3.1       | 3.1           | 2.1.5*, 2.2, 3.x, 4.0 | 4.12             | 8             | 2.12                     |
-| 3.0       | 3.0           | 2.1.5*, 2.2, 3.x, 4.0 | 4.12             | 8             | 2.12                     |
-| 2.5       | 2.4           | 2.1.5*, 2.2, 3.x, 4.0 | 4.12             | 8             | 2.11, 2.12               |
-| 2.4.2     | 2.4           | 2.1.5*, 2.2, 3.x      | 3.0              | 8             | 2.11, 2.12               |
-| 2.4       | 2.4           | 2.1.5*, 2.2, 3.x      | 3.0              | 8             | 2.11                     |
-| 2.3       | 2.3           | 2.1.5*, 2.2, 3.x      | 3.0              | 8             | 2.11                     |
-| 2.0       | 2.0, 2.1, 2.2 | 2.1.5*, 2.2, 3.x      | 3.0              | 8             | 2.10, 2.11               |
-| 1.6       | 1.6           | 2.1.5*, 2.2, 3.0      | 3.0              | 7             | 2.10, 2.11               |
-| 1.5       | 1.5, 1.6      | 2.1.5*, 2.2, 3.0      | 3.0              | 7             | 2.10, 2.11               |
-| 1.4       | 1.4           | 2.1.5*                | 2.1              | 7             | 2.10, 2.11               |
-| 1.3       | 1.3           | 2.1.5*                | 2.1              | 7             | 2.10, 2.11               |
-| 1.2       | 1.2           | 2.1, 2.0              | 2.1              | 7             | 2.10, 2.11               |
-| 1.1       | 1.1, 1.0      | 2.1, 2.0              | 2.1              | 7             | 2.10, 2.11               |
-| 1.0       | 1.0, 0.9      | 2.0                   | 2.0              | 7             | 2.10, 2.11               |
+| Connector | Spark         | Cassandra                  | Cassandra Java Driver | Minimum Java Version | Supported Scala Versions |
+|-----------|---------------|----------------------------|-----------------------|----------------------|--------------------------|
+| 3.5.1     | 3.5           | 2.1.5*, 2.2, 3.x, 4.x, 5.0 | 4.18                  | 8                    | 2.12, 2.13               |  
+| 3.5       | 3.5           | 2.1.5*, 2.2, 3.x, 4.x      | 4.13                  | 8                    | 2.12, 2.13               |  
+| 3.4       | 3.4           | 2.1.5*, 2.2, 3.x, 4.x      | 4.13                  | 8                    | 2.12, 2.13               |
+| 3.3       | 3.3           | 2.1.5*, 2.2, 3.x, 4.x      | 4.13                  | 8                    | 2.12                     |
+| 3.2       | 3.2           | 2.1.5*, 2.2, 3.x, 4.0      | 4.13                  | 8                    | 2.12                     |
+| 3.1       | 3.1           | 2.1.5*, 2.2, 3.x, 4.0      | 4.12                  | 8                    | 2.12                     |
+| 3.0       | 3.0           | 2.1.5*, 2.2, 3.x, 4.0      | 4.12                  | 8                    | 2.12                     |
+| 2.5       | 2.4           | 2.1.5*, 2.2, 3.x, 4.0      | 4.12                  | 8                    | 2.11, 2.12               |
+| 2.4.2     | 2.4           | 2.1.5*, 2.2, 3.x           | 3.0                   | 8                    | 2.11, 2.12               |
+| 2.4       | 2.4           | 2.1.5*, 2.2, 3.x           | 3.0                   | 8                    | 2.11                     |
+| 2.3       | 2.3           | 2.1.5*, 2.2, 3.x           | 3.0                   | 8                    | 2.11                     |
+| 2.0       | 2.0, 2.1, 2.2 | 2.1.5*, 2.2, 3.x           | 3.0                   | 8                    | 2.10, 2.11               |
+| 1.6       | 1.6           | 2.1.5*, 2.2, 3.0           | 3.0                   | 7                    | 2.10, 2.11               |
+| 1.5       | 1.5, 1.6      | 2.1.5*, 2.2, 3.0           | 3.0                   | 7                    | 2.10, 2.11               |
+| 1.4       | 1.4           | 2.1.5*                     | 2.1                   | 7                    | 2.10, 2.11               |
+| 1.3       | 1.3           | 2.1.5*                     | 2.1                   | 7                    | 2.10, 2.11               |
+| 1.2       | 1.2           | 2.1, 2.0                   | 2.1                   | 7                    | 2.10, 2.11               |
+| 1.1       | 1.1, 1.0      | 2.1, 2.0                   | 2.1                   | 7                    | 2.10, 2.11               |
+| 1.0       | 1.0, 0.9      | 2.0                        | 2.0                   | 7                    | 2.10, 2.11               |
 
 **Compatible with 2.1.X where X >= 5*
 
@@ -193,14 +194,13 @@ Note that the integration tests require [CCM](https://github.com/riptano/ccm) to
 See [Tips for Developing the Spark Cassandra Connector](doc/developers.md) for details.
 
 By default, integration tests start up a separate, single Cassandra instance and run Spark in local mode.
-It is possible to run integration tests with your own Cassandra and/or Spark cluster.
+It is possible to run integration tests with your own Spark cluster.
 First, prepare a jar with testing code:
 
     ./sbt/sbt test:package
 
 Then copy the generated test jar to your Spark nodes and run:    
 
-    export IT_TEST_CASSANDRA_HOST=<IP of one of the Cassandra nodes>
     export IT_TEST_SPARK_MASTER=<Spark Master URL>
     ./sbt/sbt it:test
 
