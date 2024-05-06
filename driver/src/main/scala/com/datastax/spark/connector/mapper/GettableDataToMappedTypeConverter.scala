@@ -93,6 +93,10 @@ class GettableDataToMappedTypeConverter[T : TypeTag : ColumnMapper](
         val argConverter = converter(argColumnType, argScalaType)
         TypeConverter.forType[U](Seq(argConverter))
 
+      case (VectorType(argColumnType, _), TypeRef(_, _, List(argScalaType))) =>
+        val argConverter = converter(argColumnType, argScalaType)
+        TypeConverter.forType[U](Seq(argConverter))
+
       case (SetType(argColumnType, _), TypeRef(_, _, List(argScalaType))) =>
         val argConverter = converter(argColumnType, argScalaType)
         TypeConverter.forType[U](Seq(argConverter))

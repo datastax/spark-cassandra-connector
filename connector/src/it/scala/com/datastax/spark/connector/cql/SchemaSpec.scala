@@ -1,6 +1,7 @@
 package com.datastax.spark.connector.cql
 
 import com.datastax.spark.connector.SparkCassandraITWordSpecBase
+import com.datastax.spark.connector.ccm.CcmConfig
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.types._
 import com.datastax.spark.connector.util.schemaFromCassandra
@@ -49,6 +50,9 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
       s"""CREATE INDEX test_d9_m23423ap_idx ON $ks.test (full(d10_set))""")
     session.execute(
       s"""CREATE INDEX test_d7_int_idx ON $ks.test (d7_int)""")
+    from(Some(CcmConfig.V5_0_0), None) {
+      session.execute(s"ALTER TABLE $ks.test ADD d17_vector frozen<vector<int,3>>")
+    }
 
     for (i <- 0 to 9) {
       session.execute(s"insert into $ks.test (k1,k2,k3,c1,c2,c3,d10_set) " +
@@ -111,8 +115,8 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
 
     "allow to read regular column definitions" in {
       val columns = table.regularColumns
-      columns.size shouldBe 16
-      columns.map(_.columnName).toSet shouldBe Set(
+      columns.size should be >= 16
+      columns.map(_.columnName).toSet should contain allElementsOf Set(
         "d1_blob", "d2_boolean", "d3_decimal", "d4_double", "d5_float",
         "d6_inet", "d7_int", "d8_list", "d9_map", "d10_set",
         "d11_timestamp", "d12_uuid", "d13_timeuuid", "d14_varchar",
@@ -136,6 +140,9 @@ class SchemaSpec extends SparkCassandraITWordSpecBase with DefaultCluster {
       table.columnByName("d14_varchar").columnType shouldBe VarCharType
       table.columnByName("d15_varint").columnType shouldBe VarIntType
       table.columnByName("d16_address").columnType shouldBe a [UserDefinedType]
+      from(Some(CcmConfig.V5_0_0), None) {
+        table.columnByName("d17_vector").columnType shouldBe VectorType(IntType, 3)
+      }
     }
 
     "allow to list fields of a user defined type" in {
