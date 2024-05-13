@@ -20,8 +20,8 @@
 # This script launches sbt for this project. If present it uses the system
 # version of sbt. If there is no system version of sbt it attempts to download
 # sbt locally.
-SBT_VERSION=1.3.3
-URL=https://repo1.maven.org/maven2/org/scala-sbt/sbt-launch/${SBT_VERSION}/sbt-launch.jar
+SBT_VERSION=1.10.0
+URL=https://repo1.maven.org/maven2/org/scala-sbt/sbt-launch/${SBT_VERSION}/sbt-launch-${SBT_VERSION}.jar
 JAR=sbt/sbt-launch-${SBT_VERSION}.jar
 
 # Download sbt launch jar if it hasn't been downloaded yet

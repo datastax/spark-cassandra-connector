@@ -4,7 +4,7 @@ import java.sql.{Date, Timestamp}
 import java.time.{LocalDate, LocalTime}
 
 import com.datastax.spark.connector.SparkCassandraITWordSpecBase
-import com.datastax.spark.connector.ccm.CcmConfig.V6_8_3
+import com.datastax.spark.connector.ccm.CcmConfig.DSE_V6_8_3
 import com.datastax.spark.connector.cluster.DefaultCluster
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.sources._
@@ -15,7 +15,7 @@ class IndexedNumericSpec extends SparkCassandraITWordSpecBase with DefaultCluste
   private val numericTypes = Seq("int", "date", "inet", "time", "timestamp", "timeuuid") // and others
 
   override def beforeClass {
-    dseFrom(V6_8_3) {
+    dseFrom(DSE_V6_8_3) {
       conn.withSessionDo { session =>
 
         createKeyspace(session)
@@ -33,37 +33,37 @@ class IndexedNumericSpec extends SparkCassandraITWordSpecBase with DefaultCluste
 
   "Index on a numeric column" should {
 
-    "allow for equality predicate push down" in dseFrom(V6_8_3) {
+    "allow for equality predicate push down" in dseFrom(DSE_V6_8_3) {
       val data = df("numeric_types_test").filter(col("int_col") === 7)
       assertPushedPredicate(data, pushedPredicate = EqualTo("int_col", 7))
       data.count() shouldBe 1
     }
 
-    "allow for gte predicate push down" in dseFrom(V6_8_3) {
+    "allow for gte predicate push down" in dseFrom(DSE_V6_8_3) {
       val data = df("numeric_types_test").filter(col("int_col") >= 7)
       assertPushedPredicate(data, pushedPredicate = GreaterThanOrEqual("int_col", 7))
       data.count() shouldBe 3
     }
 
-    "allow for gt predicate push down" in dseFrom(V6_8_3) {
+    "allow for gt predicate push down" in dseFrom(DSE_V6_8_3) {
       val data = df("numeric_types_test").filter(col("int_col") > 7)
       assertPushedPredicate(data, pushedPredicate = GreaterThan("int_col", 7))
       data.count() shouldBe 2
     }
 
-    "allow for lt predicate push down" in dseFrom(V6_8_3) {
+    "allow for lt predicate push down" in dseFrom(DSE_V6_8_3) {
       val data = df("numeric_types_test").filter(col("int_col") < 7)
       assertPushedPredicate(data, pushedPredicate = LessThan("int_col", 7))
       data.count() shouldBe 7
     }
 
-    "allow for lte predicate push down" in dseFrom(V6_8_3) {
+    "allow for lte predicate push down" in dseFrom(DSE_V6_8_3) {
       val data = df("numeric_types_test").filter(col("int_col") <= 7)
       assertPushedPredicate(data, pushedPredicate = LessThanOrEqual("int_col", 7))
       data.count() shouldBe 8
     }
 
-    "allow for more than one range predicate push down" in dseFrom(V6_8_3) {
+    "allow for more than one range predicate push down" in dseFrom(DSE_V6_8_3) {
       val data = df("numeric_types_test").filter(col("int_col") >= 7 and col("int_col") < 9)
       assertPushedPredicate(
         data,
@@ -71,33 +71,33 @@ class IndexedNumericSpec extends SparkCassandraITWordSpecBase with DefaultCluste
       data.count() shouldBe 2
     }
 
-    "allow only for equality push down if range and equality predicates are defined" in dseFrom(V6_8_3) {
+    "allow only for equality push down if range and equality predicates are defined" in dseFrom(DSE_V6_8_3) {
       val data = df("numeric_types_test").filter(col("int_col") === 2 and col("int_col") < 4)
 
       assertPushedPredicate(data, pushedPredicate = EqualTo("int_col", 2))
       data.count() shouldBe 1
     }
 
-    "allow only for a single equality push down if there are more than one" in dseFrom(V6_8_3) {
+    "allow only for a single equality push down if there are more than one" in dseFrom(DSE_V6_8_3) {
       val data = df("numeric_types_test").filter(col("int_col") === 5 and col("int_col") === 8)
       assertPushedPredicate(data, pushedPredicate = EqualTo("int_col", 5))
       data.count() shouldBe 0
     }
 
-    "not allow for a predicate push down if OR clause is used" in dseFrom(V6_8_3) {
+    "not allow for a predicate push down if OR clause is used" in dseFrom(DSE_V6_8_3) {
       assertNoPushDown(df("numeric_types_test").filter(col("int_col") >= 7 or col("int_col") === 4))
     }
   }
 
   /** Minimal check to verify if non-obvious numeric types are supported */
   private def indexOnNumericColumn(columnName: String, value: Any): Unit = {
-    "allow for equality predicate push down" in dseFrom(V6_8_3) {
+    "allow for equality predicate push down" in dseFrom(DSE_V6_8_3) {
       val data = df("numeric_types_test").filter(col(columnName) === value)
       assertPushedPredicate(data, pushedPredicate = EqualTo(columnName, value))
       data.count() shouldBe 1
     }
 
-    "allow for gte predicate push down" in dseFrom(V6_8_3) {
+    "allow for gte predicate push down" in dseFrom(DSE_V6_8_3) {
       val data = df("numeric_types_test").filter(col(columnName) >= value)
       assertPushedPredicate(data, pushedPredicate = GreaterThanOrEqual(columnName, value))
       data.count() shouldBe 3

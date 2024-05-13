@@ -13,6 +13,13 @@ private[ccm] trait ClusterModeExecutor {
 
   protected val dir: Path
 
+  protected val javaVersion: Option[Int] = config.javaVersion match {
+    case None if config.dseEnabled => Some(8)
+    case None if config.version.getMajor < 5 => Some(8)
+    case None => Some(11)
+    case other => other
+  }
+
   def create(clusterName: String): Unit
 
   def start(nodeNo: Int): Unit
@@ -20,8 +27,8 @@ private[ccm] trait ClusterModeExecutor {
   def remove(): Unit
 
   def execute(args: String*): Seq[String] = synchronized {
-    val command = s"ccm ${args.mkString(" ")} --config-dir=${dir.toFile.getAbsolutePath}"
-    CcmBridge.execute(CommandLine.parse(command))
+    val command = "ccm" +: args :+ s"--config-dir=${dir.toFile.getAbsolutePath}"
+    CcmBridge.execute(command)
   }
 
   def executeUnsanitized(args: String*): Seq[String] = synchronized {
@@ -45,20 +52,20 @@ private[ccm] trait ClusterModeExecutor {
   }
 
   def getLastLogLines(path: String, linesCount: Int): Seq[String] = synchronized {
-    val command = s"tail -$linesCount $path"
-    CcmBridge.execute(CommandLine.parse(command))
+    val command = Seq("tail", s"-$linesCount", path)
+    CcmBridge.execute(command)
   }
 
   /**
     * Waits for the node to become alive. The first check is performed after the first interval.
     */
-  def waitForNode(nodeNo: Int, timeout: FiniteDuration, interval: Duration = 5.seconds): Boolean = {
+  def waitForNode(nodeNo: Int, timeout: FiniteDuration, interval: Duration = 1.seconds): Boolean = {
     val deadline = timeout.fromNow
     while (!deadline.isOverdue()) {
-      Thread.sleep(interval.toMillis)
       if (isAlive(nodeNo, interval)) {
         return true
       }
+      Thread.sleep(interval.toMillis)
     }
     false;
   }

@@ -50,11 +50,11 @@ class CcmBridge(config: CcmConfig) extends AutoCloseable {
   }
 
   def dsetool(n: Int, args: String*): Unit = {
-    execute(s"node$n dsetool ${args.mkString(" ")}")
+    execute(Seq(s"node$n", "dsetool") ++ args: _*)
   }
 
   def nodetool(n: Int, args: String*): Unit = {
-    execute(s"node$n nodetool ${args.mkString(" < ")}")
+    execute(Seq(s"node$n", "nodetool") ++ args: _*)
   }
 
   def refreshSizeEstimates(n: Int): Unit = {
@@ -70,6 +70,12 @@ class CcmBridge(config: CcmConfig) extends AutoCloseable {
 object CcmBridge {
 
   private val logger: Logger = LoggerFactory.getLogger(classOf[CcmBridge])
+
+  def execute(cli: Seq[String]): Seq[String] = {
+    val cmdLine = new CommandLine(cli.head)
+    cli.tail.foreach(cmdLine.addArgument)
+    execute(cmdLine)
+  }
 
   def execute(cli: CommandLine): Seq[String] = {
     logger.info("Executing: " + cli)
