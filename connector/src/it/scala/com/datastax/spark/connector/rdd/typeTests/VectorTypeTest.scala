@@ -3,22 +3,17 @@ package com.datastax.spark.connector.rdd.typeTests
 import com.datastax.oss.driver.api.core.cql.Row
 import com.datastax.oss.driver.api.core.{CqlSession, Version}
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.ccm.CcmConfig
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.datastax.spark.connector.datasource.CassandraCatalog
 import com.datastax.spark.connector.mapper.ColumnMapper
-import com.datastax.spark.connector.rdd.{ReadConf, ValidRDDType}
+import com.datastax.spark.connector.rdd.ValidRDDType
 import com.datastax.spark.connector.rdd.reader.RowReaderFactory
-import com.datastax.spark.connector.types.TypeConverter
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.cassandra.{DataFrameReaderWrapper, DataFrameWriterWrapper}
 
 import scala.collection.convert.ImplicitConversionsToScala._
-import scala.collection.immutable
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
-import scala.reflect._
 
 
 abstract class VectorTypeTest[
@@ -26,9 +21,6 @@ abstract class VectorTypeTest[
   DriverType <: Number : ClassTag,
   CaseClassType <: Product : ClassTag : TypeTag : ColumnMapper: RowReaderFactory : ValidRDDType](typeName: String) extends SparkCassandraITFlatSpecBase with DefaultCluster
 {
-  /** Skips the given test if the cluster is not Cassandra */
-  override def cassandraOnly(f: => Unit): Unit = super.cassandraOnly(f)
-
   override lazy val conn = CassandraConnector(sparkConf)
 
   val VectorTable = "vectors"
@@ -58,7 +50,7 @@ abstract class VectorTypeTest[
     }
   }
 
-  private def hasVectors(rows: List[Row], expectedVectors: Seq[Seq[ScalaType]]): Unit = {
+  private def assertVectors(rows: List[Row], expectedVectors: Seq[Seq[ScalaType]]): Unit = {
     val returnedVectors = for (i <- expectedVectors.indices) yield {
       rows.find(_.getInt("id") == i + 1).get.getVector("v", implicitly[ClassTag[DriverType]].runtimeClass.asInstanceOf[Class[Number]]).iterator().toSeq
     }
@@ -76,7 +68,7 @@ abstract class VectorTypeTest[
         .cassandraFormat(table, ks)
         .mode(SaveMode.Append)
         .save()
-      hasVectors(session.execute(s"SELECT * FROM $ks.$table").all().iterator().toList,
+      assertVectors(session.execute(s"SELECT * FROM $ks.$table").all().iterator().toList,
         Seq(vectorFromInts(1, 2, 3), vectorFromInts(4, 5, 6)))
 
       spark.createDataFrame(Seq(vectorItem(2, vectorFromInts(6, 5, 4)), vectorItem(3, vectorFromInts(7, 8, 9))))
@@ -84,7 +76,7 @@ abstract class VectorTypeTest[
         .cassandraFormat(table, ks)
         .mode(SaveMode.Append)
         .save()
-      hasVectors(session.execute(s"SELECT * FROM $ks.$table").all().iterator().toList,
+      assertVectors(session.execute(s"SELECT * FROM $ks.$table").all().iterator().toList,
         Seq(vectorFromInts(1, 2, 3), vectorFromInts(6, 5, 4), vectorFromInts(7, 8, 9)))
 
       spark.createDataFrame(Seq(vectorItem(1, vectorFromInts(9, 8, 7)), vectorItem(2, vectorFromInts(10, 11, 12))))
@@ -93,7 +85,7 @@ abstract class VectorTypeTest[
         .mode(SaveMode.Overwrite)
         .option("confirm.truncate", value = true)
         .save()
-      hasVectors(session.execute(s"SELECT * FROM $ks.$table").all().iterator().toList,
+      assertVectors(session.execute(s"SELECT * FROM $ks.$table").all().iterator().toList,
         Seq(vectorFromInts(9, 8, 7), vectorFromInts(10, 11, 12)))
     }
   }
@@ -109,7 +101,7 @@ abstract class VectorTypeTest[
         .cassandraFormat(table, ks)
         .mode(SaveMode.Append)
         .save()
-      hasVectors(session.execute(s"SELECT * FROM $ks.$table").all().iterator().toList,
+      assertVectors(session.execute(s"SELECT * FROM $ks.$table").all().iterator().toList,
         Seq(vectorFromInts(1, 2, 3), vectorFromInts(4, 5, 6)))
     }
   }
@@ -121,7 +113,7 @@ abstract class VectorTypeTest[
 
       spark.sparkContext.parallelize(Seq(vectorItem(1, vectorFromInts(1, 2, 3)), vectorItem(2, vectorFromInts(4, 5, 6))))
         .saveToCassandra(ks, table)
-      hasVectors(session.execute(s"SELECT * FROM $ks.$table").all().iterator().toList,
+      assertVectors(session.execute(s"SELECT * FROM $ks.$table").all().iterator().toList,
         Seq(vectorFromInts(1, 2, 3), vectorFromInts(4, 5, 6)))
     }
   }
@@ -133,7 +125,7 @@ abstract class VectorTypeTest[
 
       spark.sparkContext.parallelize(Seq((1, vectorFromInts(1, 2, 3)), (2, vectorFromInts(4, 5, 6))))
         .saveToCassandra(ks, table)
-      hasVectors(session.execute(s"SELECT * FROM $ks.$table").all().iterator().toList,
+      assertVectors(session.execute(s"SELECT * FROM $ks.$table").all().iterator().toList,
         Seq(vectorFromInts(1, 2, 3), vectorFromInts(4, 5, 6)))
     }
   }

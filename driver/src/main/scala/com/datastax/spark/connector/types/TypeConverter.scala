@@ -779,7 +779,7 @@ object TypeConverter {
       implicitly[TypeTag[CqlVector[T]]]
     }
 
-    def newCollection(items: Iterable[Any]): java.util.List[T] = {
+    private def newCollection(items: Iterable[Any]): java.util.List[T] = {
       val buf = new java.util.ArrayList[T](dimension)
       for (item <- items) buf.add(elemConverter.convert(item))
       buf

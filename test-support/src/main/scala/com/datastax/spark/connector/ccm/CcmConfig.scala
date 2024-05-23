@@ -19,7 +19,7 @@ case class CcmConfig(
     createOptions: List[String] = List(),
     dseWorkloads: List[String] = List(),
     jmxPortOffset: Int = 0,
-    version: Version = Version.parse(System.getProperty("ccm.version", "4.1.4")),
+    version: Version = Version.parse(System.getProperty("ccm.version", "5.0-beta1")),
     installDirectory: Option[String] = Option(System.getProperty("ccm.directory")),
     installBranch: Option[String] = Option(System.getProperty("ccm.branch")),
     dseEnabled: Boolean = Option(System.getProperty("ccm.dse")).exists(_.toLowerCase == "true"),
