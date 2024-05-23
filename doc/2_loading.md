@@ -184,6 +184,8 @@ val street = address.getString("street")
 val number = address.getInt("number")
 ```
 
+[//]: # (TODO loading vectors)
+
 ### Data type conversions
 
 The following table shows recommended Scala types corresponding to Cassandra column types. 
@@ -215,6 +217,8 @@ The following table shows recommended Scala types corresponding to Cassandra col
 | `varint`          | `BigInt`, `java.math.BigInteger`
 | `frozen<tuple<>>` | `TupleValue`, `scala.Product`, `org.apache.commons.lang3.tuple.Pair`, `org.apache.commons.lang3.tuple.Triple`  
 | user defined      | `UDTValue`
+
+[//]: # (TODO add vector)
 
 *Since `time` is encoded in nanoseconds from epoch rather than milliseconds there will be Scale
 error with an automatic conversion to `java.util.Date`*

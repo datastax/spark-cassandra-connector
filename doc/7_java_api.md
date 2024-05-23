@@ -154,6 +154,8 @@ in [Working with user-defined case classes and tuples](4_mapper.md) and
 Since 1.2, it is possible to easily provide custom column name to property 
 name translation by `select` method.
 
+[//]: # (TODO add vector example)
+
 #### Example Reading a Cassandra Table with into a Bean Class with Differently Named Fields
 Say we have a table `people2` with columns `id INT`, `last_name TEXT`, `date_of_birth TIMESTAMP` and
 we want to map the rows of this table to objects of `Person` class.

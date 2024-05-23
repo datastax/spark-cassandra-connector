@@ -170,6 +170,8 @@ cqlsh> Select * from ks.collections_mod where key = 1
 (1 rows)
 ```
 
+[//]: # (TODO saving vectors)
+
 ## Saving objects of Cassandra User Defined Types
 To save structures consisting of many fields, use a [Case Class](4_mapper.md#Mapping-User-Defined-Types) or a 
 `com.datastax.spark.connector.UDTValue` class. An instance of this class 
@@ -480,6 +482,8 @@ val table = TableDef("test","words",Seq(p1Col),Seq(c1Col, c2Col),Seq(rCol),
 val rddOut = rdd.map(s => outData(s._1, s._2(0), s._2(1), s._3))
 rddOut.saveAsCassandraTableEx(table, SomeColumns("col1", "col2", "col3", "col4"))
 ```
+
+[//]: # (TODO add a note about vector)
 
 ## Deleting Rows and Columns
 `RDD.deleteFromCassandra(keyspaceName, tableName)` deletes specific rows 

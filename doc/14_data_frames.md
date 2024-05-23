@@ -122,6 +122,8 @@ CREATE TABLE casscatalog.ksname.testTable (key_1 Int, key_2 Int, key_3 Int, cc1 
 
 Any statements that involve creating a Table are also supported like `CREATE TABLE AS SELECT`
 
+[//]: # (TODO add section for vector)
+
 #### Altering Tables
 
 All table properties can be changed and normal columns can be added and removed

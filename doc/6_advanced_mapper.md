@@ -124,6 +124,8 @@ Cassandra column type | Object type to convert from / to
  `varint`             | `java.math.BigInteger`
  user defined         | `com.datastax.spark.connector.UDTValue`
 
+[//]: # (todo add vector type)
+
 Custom converters for collections are not supported.
  
 When defining your own `TypeConverter` make sure it is `Serializable` and

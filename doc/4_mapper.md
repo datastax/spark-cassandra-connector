@@ -139,4 +139,6 @@ CREATE TYPE ks.address (street text, city text, zip int)
 CREATE TABLE $ks.udts(key INT PRIMARY KEY, name text, addr frozen<address>)
 ```
 
+[//]: # (TODO mapping vectors)
+
 [Next - Saving data](5_saving.md)
