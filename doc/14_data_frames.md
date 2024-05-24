@@ -122,7 +122,8 @@ CREATE TABLE casscatalog.ksname.testTable (key_1 Int, key_2 Int, key_3 Int, cc1 
 
 Any statements that involve creating a Table are also supported like `CREATE TABLE AS SELECT`
 
-[//]: # (TODO add section for vector)
+Note that creating columns of Cassandra vector type is not supported yet. Such columns have to 
+be created manually with CQL.
 
 #### Altering Tables
 

@@ -170,7 +170,35 @@ cqlsh> Select * from ks.collections_mod where key = 1
 (1 rows)
 ```
 
-[//]: # (TODO saving vectors)
+## Saving Cassandra vectors
+
+```sql
+CREATE TABLE test.things (
+    id int PRIMARY KEY, 
+    name text, 
+    features vector<float, 3>
+);
+```
+
+```scala
+val newData = sc.parallelize(Seq((5, "e", List(5, 6, 7)), (6, "f", List(6, 7, 8))))
+// newData: org.apache.spark.rdd.RDD[(Int, String, List[Int])] = ParallelCollectionRDD[...]
+
+newData.saveToCassandra("test", "things", SomeColumns("id", "name", "features"))
+```
+
+```sql
+cqlsh> select * from test.things ;
+
+id | features      | name
+---+---------------+------
+ 5 |     [5, 6, 7] |    e
+ 6 |     [6, 7, 8] |    f
+
+(2 rows)
+```
+Note that Cassandra vectors are fixed size and are not capable of adding or removing 
+elements from them.
 
 ## Saving objects of Cassandra User Defined Types
 To save structures consisting of many fields, use a [Case Class](4_mapper.md#Mapping-User-Defined-Types) or a 
@@ -483,7 +511,8 @@ val rddOut = rdd.map(s => outData(s._1, s._2(0), s._2(1), s._3))
 rddOut.saveAsCassandraTableEx(table, SomeColumns("col1", "col2", "col3", "col4"))
 ```
 
-[//]: # (TODO add a note about vector)
+Note that creating columns of Cassandra vector type is not supported yet and each
+time you want to save vectors you need to create the table manually with CQL.
 
 ## Deleting Rows and Columns
 `RDD.deleteFromCassandra(keyspaceName, tableName)` deletes specific rows 

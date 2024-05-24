@@ -122,9 +122,8 @@ Cassandra column type | Object type to convert from / to
  `uuid`               | `java.util.UUID`
  `varchar`            | `java.lang.String`
  `varint`             | `java.math.BigInteger`
+ `vector`             | `com.datastax.oss.driver.api.core.data.CqlVector`
  user defined         | `com.datastax.spark.connector.UDTValue`
-
-[//]: # (todo add vector type)
 
 Custom converters for collections are not supported.
  
