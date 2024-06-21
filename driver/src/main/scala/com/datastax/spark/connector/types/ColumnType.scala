@@ -7,7 +7,7 @@ import java.util.{Date, UUID}
 import com.datastax.dse.driver.api.core.`type`.DseDataTypes
 import com.datastax.oss.driver.api.core.DefaultProtocolVersion.V4
 import com.datastax.oss.driver.api.core.ProtocolVersion
-import com.datastax.oss.driver.api.core.`type`.{DataType, DataTypes => DriverDataTypes, ListType => DriverListType, MapType => DriverMapType, SetType => DriverSetType, TupleType => DriverTupleType, UserDefinedType => DriverUserDefinedType}
+import com.datastax.oss.driver.api.core.`type`.{DataType, DataTypes => DriverDataTypes, ListType => DriverListType, MapType => DriverMapType, SetType => DriverSetType, TupleType => DriverTupleType, UserDefinedType => DriverUserDefinedType, VectorType => DriverVectorType}
 import com.datastax.spark.connector.util._
 
 
@@ -77,6 +77,7 @@ object ColumnType {
     case mapType: DriverMapType => MapType(fromDriverType(mapType.getKeyType), fromDriverType(mapType.getValueType), mapType.isFrozen)
     case userType: DriverUserDefinedType => UserDefinedType(userType)
     case tupleType: DriverTupleType => TupleType(tupleType)
+    case vectorType: DriverVectorType => VectorType(fromDriverType(vectorType.getElementType), vectorType.getDimensions)
     case dataType => primitiveTypeMap(dataType)
   }
 
@@ -153,6 +154,7 @@ object ColumnType {
     val converter: TypeConverter[_] =
       dataType match {
         case list: DriverListType => TypeConverter.javaArrayListConverter(converterToCassandra(list.getElementType))
+        case vec: DriverVectorType => TypeConverter.cqlVectorConverter(vec.getDimensions)(converterToCassandra(vec.getElementType).asInstanceOf[TypeConverter[Number]])
         case set: DriverSetType => TypeConverter.javaHashSetConverter(converterToCassandra(set.getElementType))
         case map: DriverMapType => TypeConverter.javaHashMapConverter(converterToCassandra(map.getKeyType), converterToCassandra(map.getValueType))
         case udt: DriverUserDefinedType => new UserDefinedType.DriverUDTValueConverter(udt)

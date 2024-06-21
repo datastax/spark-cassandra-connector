@@ -5,7 +5,7 @@ import com.datastax.oss.driver.api.core.config.DefaultDriverOption._
 import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, BoundStatement}
 import com.datastax.oss.driver.api.core.{DefaultConsistencyLevel, DefaultProtocolVersion}
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.ccm.CcmConfig.V3_6_0
+import com.datastax.spark.connector.ccm.CcmConfig.{DSE_V5_1_0, V3_6_0}
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.datastax.spark.connector.embedded.SparkTemplate._
@@ -425,7 +425,7 @@ class RDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster {
 
   }
 
-  it should "should be joinable with a PER PARTITION LIMIT limit" in from(V3_6_0){
+  it should "should be joinable with a PER PARTITION LIMIT limit" in from(cassandra = V3_6_0, dse = DSE_V5_1_0){
     val source = sc.parallelize(keys).map(x => (x, x * 100))
     val someCass = source
       .joinWithCassandraTable(ks, wideTable, joinColumns = SomeColumns("key", "group"))

@@ -9,7 +9,7 @@ import com.datastax.oss.driver.api.core.config.DefaultDriverOption
 import com.datastax.oss.driver.api.core.cql.SimpleStatement
 import com.datastax.oss.driver.api.core.cql.SimpleStatement._
 import com.datastax.spark.connector._
-import com.datastax.spark.connector.ccm.CcmConfig.{DSE_V6_7_0, V3_6_0}
+import com.datastax.spark.connector.ccm.CcmConfig.{DSE_V5_1_0, DSE_V6_7_0, V3_6_0}
 import com.datastax.spark.connector.cluster.DefaultCluster
 import com.datastax.spark.connector.cql.{CassandraConnector, CassandraConnectorConf}
 import com.datastax.spark.connector.mapper.{DefaultColumnMapper, JavaBeanColumnMapper, JavaTestBean, JavaTestUDTBean}
@@ -794,7 +794,7 @@ class CassandraRDDSpec extends SparkCassandraITFlatSpecBase with DefaultCluster 
     results should contain ((KeyGroup(3, 300), (3, 300, "0003")))
   }
 
-  it should "allow the use of PER PARTITION LIMITs " in from(V3_6_0) {
+  it should "allow the use of PER PARTITION LIMITs " in from(cassandra = V3_6_0, dse = DSE_V5_1_0) {
     val result = sc.cassandraTable(ks, "clustering_time").perPartitionLimit(1).collect
     result.length should be (1)
   }

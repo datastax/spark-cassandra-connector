@@ -98,7 +98,7 @@ trait SparkCassandraITSpecBase
   }
 
   override def withFixture(test: NoArgTest): Outcome = wrapUnserializableExceptions {
-    super.withFixture(test)
+      super.withFixture(test)
   }
 
   def getKsName = {
@@ -145,18 +145,32 @@ trait SparkCassandraITSpecBase
     else report(s"Skipped Because ProtocolVersion $pv < $protocolVersion")
   }
 
-  /** Skips the given test if the Cluster Version is lower or equal to the given `cassandra` Version or `dse` Version
-    * (if this is a DSE cluster) */
-  def from(cassandra: Version, dse: Version)(f: => Unit): Unit = {
+  /** Runs the given test only if the cluster type and version matches.
+   *
+   * @param cassandra run the test if the cluster is Cassandra >= the given version;
+   *                  if `None`, never run the test for Cassandra clusters
+   * @param dse       run the test if the cluster is DSE >= the given version;
+   *                  if `None`, never run the test for DSE clusters
+   * @param f         the test to run
+   */
+  def from(cassandra: Version, dse: Version)(f: => Unit): Unit = from(Option(cassandra), Option(dse))(f)
+
+  def from(cassandra: Option[Version] = None, dse: Option[Version] = None)(f: => Unit): Unit = {
     if (isDse(conn)) {
-      from(dse)(f)
+      dse match {
+        case Some(dseVersion) => from(dseVersion)(f)
+        case None => report(s"Skipped because not DSE")
+      }
     } else {
-      from(cassandra)(f)
+      cassandra match {
+        case Some(cassandraVersion) => from(cassandraVersion)(f)
+        case None => report(s"Skipped because not Cassandra")
+      }
     }
   }
 
-  /** Skips the given test if the Cluster Version is lower or equal to the given version */
-  def from(version: Version)(f: => Unit): Unit = {
+  /** Skips the given test if the Cluster Version is lower than the given version */
+  private def from(version: Version)(f: => Unit): Unit = {
     skip(cluster.getCassandraVersion, version) { f }
   }
 
@@ -172,7 +186,7 @@ trait SparkCassandraITSpecBase
     else f
   }
 
-  /** Skips the given test if the Cluster Version is lower or equal to the given version or the cluster is not DSE */
+  /** Skips the given test if the Cluster Version is lower than the given version or the cluster is not DSE */
   def dseFrom(version: Version)(f: => Any): Unit = {
     dseOnly {
       skip(cluster.getDseVersion.get, version) { f }

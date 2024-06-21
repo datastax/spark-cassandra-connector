@@ -59,6 +59,7 @@ object DataTypeConverter extends Logging {
     cassandraType match {
       case connector.types.SetType(et, _)                => catalystTypes.ArrayType(catalystDataType(et, nullable), nullable)
       case connector.types.ListType(et, _)               => catalystTypes.ArrayType(catalystDataType(et, nullable), nullable)
+      case connector.types.VectorType(et, _)             => catalystTypes.ArrayType(catalystDataType(et, nullable), nullable)
       case connector.types.MapType(kt, vt, _)            => catalystTypes.MapType(catalystDataType(kt, nullable), catalystDataType(vt, nullable), nullable)
       case connector.types.UserDefinedType(_, fields, _) => catalystTypes.StructType(fields.map(catalystStructField))
       case connector.types.TupleType(fields @ _* )       => catalystTypes.StructType(fields.map(catalystStructFieldFromTuple))

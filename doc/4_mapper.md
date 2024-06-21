@@ -14,6 +14,9 @@ sc.cassandraTable[(String, Int)]("test", "words").select("word", "count").toArra
 
 sc.cassandraTable[(Int, String)]("test", "words").select("count", "word").toArray
 // Array((20,bar), (10,foo))
+
+scala> sc.cassandraTable[(String, List[Float])]("test", "things").select("name", "features").collect
+// Array[(String, List[Float])] = Array((c,List(1.0, 1.5, 4.0)), (d,List()), (b,List(2.2, 2.1, 2.0)), (a,List(1.0, 2.0, 3.0)))
 ```    
 
 ### Mapping rows to (case) objects

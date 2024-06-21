@@ -1,3 +1,6 @@
+3.5.1
+ * Support for Vector type available in Cassandra 5.0 (SPARKC-706)
+ * Upgrade Cassandra Java Driver to 4.18.1, support Cassandra 5.0 in test framework (SPARKC-710)
 
 3.5.0
  * Support for Apache Spark 3.5 (SPARKC-704)

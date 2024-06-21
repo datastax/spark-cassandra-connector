@@ -122,6 +122,9 @@ CREATE TABLE casscatalog.ksname.testTable (key_1 Int, key_2 Int, key_3 Int, cc1 
 
 Any statements that involve creating a Table are also supported like `CREATE TABLE AS SELECT`
 
+Note that creating columns of Cassandra vector type is not supported yet. Such columns have to 
+be created manually with CQL.
+
 #### Altering Tables
 
 All table properties can be changed and normal columns can be added and removed
@@ -157,6 +160,12 @@ Reading with Scala
 spark.read.table("casscatalog.ksname.testTable")
 ```
 
+Reading vectors, specifying a predicate on vector column
+```sql
+SELECT name, features FROM casscatalog.test.things WHERE features = array(float(1), float(1.5), float(4))
+```
+
+
 #### Writing Examples
 
 Writing with Sql
@@ -164,9 +173,15 @@ Writing with Sql
 INSERT INTO casscatalog.ksname.testTable SELECT * from casscatalog.ksname.testTable2
 ```
 
+
 Writing with Scala
 ```scala 
 df.writeTo("casscatalog.ksname.testTable")
+```
+
+Writing vectors
+```sql
+INSERT INTO casscatalog.test.things (id, name, features) VALUES (9, 'x', array(2, 3, 4))
 ```
 
 #### Predicate Pushdown and Column Pruning

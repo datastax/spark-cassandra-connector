@@ -82,6 +82,10 @@ object MappedToGettableDataConverter extends Logging {
               val valueConverter = converter(valueColumnType, valueScalaType)
               TypeConverter.javaHashMapConverter(keyConverter, valueConverter)
 
+            case (VectorType(argColumnType, dimension), TypeRef(_, _, List(argScalaType))) =>
+              val argConverter = converter(argColumnType, argScalaType)
+              TypeConverter.cqlVectorConverter(dimension)(argConverter.asInstanceOf[TypeConverter[Number]])
+
             case (tt @ TupleType(argColumnType1, argColumnType2),
                   TypeRef(_, Symbols.PairSymbol, List(argScalaType1, argScalaType2))) =>
               val c1 = converter(argColumnType1.columnType, argScalaType1)

@@ -9,7 +9,7 @@ import java.util.{Calendar, Date, GregorianCalendar, TimeZone, UUID}
 
 import com.datastax.dse.driver.api.core.data.geometry.{LineString, Point, Polygon}
 import com.datastax.dse.driver.api.core.data.time.DateRange
-import com.datastax.oss.driver.api.core.data.CqlDuration
+import com.datastax.oss.driver.api.core.data.{CqlDuration, CqlVector}
 import com.datastax.spark.connector.TupleValue
 import com.datastax.spark.connector.UDTValue.UDTValueConverter
 import com.datastax.spark.connector.util.ByteBufferUtil
@@ -700,6 +700,7 @@ object TypeConverter {
       case x: java.util.List[_] => newCollection(x.asScala)
       case x: java.util.Set[_] => newCollection(x.asScala)
       case x: java.util.Map[_, _] => newCollection(x.asScala)
+      case x: CqlVector[_] => newCollection(x.asScala)
       case x: Iterable[_] => newCollection(x)
     }
   }
@@ -765,6 +766,29 @@ object TypeConverter {
     @transient
     lazy val targetTypeTag = {
       implicitly[TypeTag[java.util.List[T]]]
+    }
+  }
+
+  class CqlVectorConverter[T <: Number : TypeConverter](dimension: Int) extends TypeConverter[CqlVector[T]] {
+    val elemConverter = implicitly[TypeConverter[T]]
+
+    implicit def elemTypeTag: TypeTag[T] = elemConverter.targetTypeTag
+
+    @transient
+    lazy val targetTypeTag = {
+      implicitly[TypeTag[CqlVector[T]]]
+    }
+
+    private def newCollection(items: Iterable[Any]): java.util.List[T] = {
+      val buf = new java.util.ArrayList[T](dimension)
+      for (item <- items) buf.add(elemConverter.convert(item))
+      buf
+    }
+
+    def convertPF = {
+      case x: CqlVector[_] => x.asInstanceOf[CqlVector[T]] // it is an optimization - should we skip converting the elements?
+      case x: java.lang.Iterable[_] => CqlVector.newInstance[T](newCollection(x.asScala))
+      case x: Iterable[_] => CqlVector.newInstance[T](newCollection(x))
     }
   }
 
@@ -868,6 +892,9 @@ object TypeConverter {
 
   implicit def javaArrayListConverter[T : TypeConverter]: JavaArrayListConverter[T] =
     new JavaArrayListConverter[T]
+
+  implicit def cqlVectorConverter[T <: Number : TypeConverter](dimension: Int): CqlVectorConverter[T] =
+    new CqlVectorConverter[T](dimension)
 
   implicit def javaSetConverter[T : TypeConverter]: JavaSetConverter[T] =
     new JavaSetConverter[T]

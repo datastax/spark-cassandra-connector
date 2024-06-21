@@ -2,7 +2,7 @@ package com.datastax.spark.connector.datasource
 
 import java.util.Locale
 import com.datastax.oss.driver.api.core.ProtocolVersion
-import com.datastax.oss.driver.api.core.`type`.{DataType, DataTypes, ListType, MapType, SetType, TupleType, UserDefinedType}
+import com.datastax.oss.driver.api.core.`type`.{DataType, DataTypes, ListType, MapType, SetType, TupleType, UserDefinedType, VectorType}
 import com.datastax.oss.driver.api.core.`type`.DataTypes._
 import com.datastax.dse.driver.api.core.`type`.DseDataTypes._
 import com.datastax.oss.driver.api.core.metadata.schema.{ColumnMetadata, RelationMetadata, TableMetadata}
@@ -167,6 +167,7 @@ object CassandraSourceUtil extends Logging {
       case m: MapType => SparkSqlMapType(catalystDataType(m.getKeyType, nullable), catalystDataType(m.getValueType, nullable), nullable)
       case udt: UserDefinedType => fromUdt(udt)
       case t: TupleType => fromTuple(t)
+      case v: VectorType => ArrayType(catalystDataType(v.getElementType, nullable), nullable)
       case VARINT =>
         logWarning("VarIntType is mapped to catalystTypes.DecimalType with unlimited values.")
         primitiveCatalystDataType(cassandraType)

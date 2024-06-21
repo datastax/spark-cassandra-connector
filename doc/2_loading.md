@@ -30,7 +30,7 @@ CREATE TABLE test.words (word text PRIMARY KEY, count int);
     
 Load data into the table:
 
-```scala
+```sql
 INSERT INTO test.words (word, count) VALUES ('foo', 20);
 INSERT INTO test.words (word, count) VALUES ('bar', 20);
 ```
@@ -184,6 +184,50 @@ val street = address.getString("street")
 val number = address.getInt("number")
 ```
 
+### Reading vectors
+
+You can read vector columns in a Cassandra table similarly 
+to reading lists using `getList` or generic `get` methods of the 
+`CassandraRow` object. 
+
+Assuming you set up the test keyspace earlier, follow these steps
+to access a Cassandra collection.
+
+In the test keyspace, set up a collection set using cqlsh:
+
+```sql
+CREATE TABLE test.things (id int PRIMARY KEY, name text, features vector<float, 3>);
+INSERT INTO test.things (id, name, features) VALUES (1, 'a', [1.0, 2.0, 3.0]);
+INSERT INTO test.things (id, name, features) VALUES (2, 'b', [2.2, 2.1, 2.0]);
+INSERT INTO test.things (id, name, features) VALUES (3, 'c', [1.0, 1.5, 4.0]);
+```
+
+Then in your application, retrieve the first row:
+
+```scala
+val row = sc.cassandraTable("test", "things").first
+// row: com.datastax.spark.connector.CassandraRow = CassandraRow{id: 2, features: [2.2, 2.1, 2.0], name: b}
+```
+
+Query the vectors in Cassandra from Spark:
+
+```scala
+row.getList[Float]("features")        // Vector[Float] = Vector(2.2, 2.1, 2.0)
+row.get[List[Float]]("features")      // List[Float] = List(2.2, 2.1, 2.0)
+row.get[Seq[Double]]("features")      // Seq[Double] = List(2.200000047683716, 2.0999999046325684, 2.0)
+row.get[IndexedSeq[Int]]("features")  // IndexedSeq[Int] = Vector(2, 2, 2)
+row.get[Set[Long]]("features")        // Set[Long] = Set(2)
+```
+
+It is also possible to convert a vector to CQL `String` representation:
+
+```scala
+scala> row.get[String]("features")    // String = [2.2, 2.1, 2.0]
+```
+
+A `null` vector is equivalent to an empty list. You can also use 
+`get[Option[List[...]]]` to get `None` in case of `null`.
+
 ### Data type conversions
 
 The following table shows recommended Scala types corresponding to Cassandra column types. 
@@ -213,6 +257,7 @@ The following table shows recommended Scala types corresponding to Cassandra col
 | `uuid`            | `java.util.UUID` 
 | `varchar`         | `String` 
 | `varint`          | `BigInt`, `java.math.BigInteger`
+| `vector`          | `Vector`, `List`, `Iterable`, `Seq`, `IndexedSeq`, `java.util.List`
 | `frozen<tuple<>>` | `TupleValue`, `scala.Product`, `org.apache.commons.lang3.tuple.Pair`, `org.apache.commons.lang3.tuple.Triple`  
 | user defined      | `UDTValue`
 
