@@ -22,10 +22,12 @@ case class CassandraScanPartitionReaderFactory(
   readConf: ReadConf,
   queryParts: CqlQueryParts) extends PartitionReaderFactory {
 
+  def isCountQuery: Boolean = queryParts.selectedColumnRefs.contains(RowCountRef)
+
   override def createReader(partition: InputPartition): PartitionReader[InternalRow] = {
 
     val cassandraPartition = partition.asInstanceOf[CassandraPartition[Any, _ <: Token[Any]]]
-    if (queryParts.selectedColumnRefs.contains(RowCountRef)) {
+    if (isCountQuery) {
       //Count Pushdown
       CassandraCountPartitionReader(
         connector,
