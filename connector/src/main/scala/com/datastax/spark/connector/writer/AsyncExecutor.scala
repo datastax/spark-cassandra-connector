@@ -1,8 +1,7 @@
 package com.datastax.spark.connector.writer
 
-import java.util.concurrent.{CompletionStage, Semaphore}
+import java.util.concurrent.{CompletableFuture, CompletionStage, Semaphore}
 import java.util.function.BiConsumer
-
 import com.datastax.spark.connector.util.Logging
 
 import scala.jdk.CollectionConverters._
@@ -41,9 +40,14 @@ class AsyncExecutor[T, R](asyncAction: T => CompletionStage[R], maxConcurrentTas
     val executionTimestamp = System.nanoTime()
 
     def tryFuture(): Future[R] = {
-      val value = asyncAction(task)
+      val value = Try(asyncAction(task)) recover {
+        case e =>
+          val future = new CompletableFuture[R]()
+          future.completeExceptionally(e)
+          future
+      }
 
-      value.whenComplete(new BiConsumer[R, Throwable] {
+      value.get.whenComplete(new BiConsumer[R, Throwable] {
         private def release() {
           semaphore.release()
           pendingFutures.remove(promise.future)
