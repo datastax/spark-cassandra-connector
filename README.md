@@ -168,9 +168,9 @@ Questions and requests for help may be submitted to the [user mailing list](http
 
 ## Q/A Exchange
 
-The [DataStax Community](https://community.datastax.com/index.html) provides a free question and answer website for any and all
-questions relating to any DataStax Related technology. Including the Spark Cassandra Connector. Both DataStax 
-engineers and community members frequent this board and answer questions.
+The [DataStax Community](https://dstx.io/discord) provides a free question and answer server for any and all
+questions relating to any DataStax related technology. Including the Spark Cassandra Connector. Both DataStax
+engineers and community members frequently participate here and answer questions.
 
 ## Contributing
 
