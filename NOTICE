@@ -1,0 +1,77 @@
+Apache Cassandra Apache Spark Connector
+Copyright 2014 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+This product originates, before git sha
+d1eb21d485ce948b84f471e2557cf605a6459438, from software from DataStax and other
+individual contributors. All work was previously copyrighted to DataStax.
+
+Non-DataStax contributors are listed below. Those marked with asterisk have
+explicitly consented to their contributions being donated to the ASF.
+
+Soumya Sanyal                   @hasSoumya
+Yohann Rubinsztejn              @yohannrub
+Ivan Nikolov                    @nikolovivan                                            *
+Andrew Ash                      @ash211             <andrew@andrewash.com>              *
+Todd                            @tsindot                                                *
+Stefano Ortolani                @ostefano                                               *
+Jacek Laskowski                 @jaceklaskowski     <jacek@japila.pl>                   *
+Ryan Scheidter                  @rs017991
+Miguel Miranda                  @miguelnmiranda                                         *
+Alexey Ponkin                   @ponkin                                                 *
+Greg Baker                      @gregbaker                                              *
+Gerrit                          @gerritjvv                                              *
+Tobias Stadler                  @tobiasstadler      <ts.stadler@gmx.de>                 *
+Liang-Chi Hsieh                 @viirya                                                 *
+Burak Yavuz                     @brkyvz             <burak@databricks.com>              *
+Kaushal Prajapati               @skp33
+Jack Richard Buggins            @JackBuggins
+etienne                         @crakjie
+Vincenzo Cerminara              @vinsce                                                 *
+Philipp Hoffmann                @philipphoffmann    <mail@philipphoffmann.de>
+Matt Chapman                    @matt2000
+Ian Macalinao                   @macalinao          <github-primary@igm.pub>
+Chen Bin                        @bchen-talend
+LI Geng                         @anguslee           <angus.lee8329@gmail.com>
+Guancheng (G.C.) Chen           @gchen              <chenguancheng@gmail.com>
+Mathieu Morlon                  @glutamatt                                              *
+Zachary Taylor                  @ztaylor54                                              *
+Nick Rushton                    @rushton            <nick.rushton@hotmail.com>          *
+Delyan Dimitrov                 @delyand                                                *
+??                              @cip123                                                 *
+Paul Leclercq                   @polomarcus                                             *
+Jorge Lee                       @jrglee                                                 *
+Mariusz                         @mariuszeniro
+Ben Slater                      @slater-ben         <ben.slater@instaclustr.com>        *
+Mark Watson                     @mkwatson           <mkw5053@gmail.com>                 *
+The Gitter Badger               @gitter-badger      <badger@gitter.im>
+Arash Nabili                    @arashn                                                 *
+Jason Ribeiro                   @jasonribeiro
+Sina Kordestanchi               @arsinux
+??                              @nftw                                                   *
+Sebastian                       @ssuperczynski     <s.superczynski@gmail.com>           *
+Ilya Epifanov                   @ilya-epifanov                                          *
+Dragisa Krsmanovic              @dragisak                                               *
+Josef Lindman Hörnlund          @jotsif            <josef@modulai.io>                   *
+Pablo Francisco Pérez Hidalgo   @pfcoperez         <contact@pablofranciscoperez.info>   *
+??                              @sheldonkhall                                           *
+Xian Yi Teng                    @xytxytxyt         <xytxytxyt@gmail.com>
+Noorul Islam K M                @noorul            <noorul@noorul.com>                  *
+Norbert Schultz                 @nob13                                                  *
+Sam Theisens                    @SamTheisens                                            *
+Alexey Maslennikov              @grayswander       <alexey.maslennikov@gmail.com>       *
+Holden Karau                    @holdenk           <holden@pigscanfly.ca>
+lsk                             @critikaled
+??                              @bbenshalom
+Adam Dąbrowski                  @dabrowski-adam                                         *
+Omri Iluz                       @omriiluz                                               *
+Igor Kamyshnikov                @gowa                                                   *
+Silvio                          @granturing        <silvio.fiorito@granturing.com>      *
+Nils Petersohn                  @snackycracky
+Joe Lust                        @twistedpair
+Chander S Pechetty              @chanderspechetty
+Yann Moisan                     @YannMoisan
+Jaret Dawson                    @mathgeek          <jaret.dawson@gmail.com>             *

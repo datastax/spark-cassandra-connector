@@ -1,4 +1,4 @@
-# DataStax Connector for Apache Spark to Apache Cassandra
+# Apache Cassandra Spark Connector
 
 *Lightning-fast cluster computing with Apache Spark&trade; and Apache Cassandra&reg;.*
 
@@ -168,18 +168,11 @@ Questions and requests for help may be submitted to the [user mailing list](http
 
 ## Q/A Exchange
 
-The [Community](https://dtsx.io/discord) provides a free question and answer server for any and all
-questions relating to any DataStax related technology. Including the Spark Cassandra Connector. Both DataStax
-engineers and community members frequently participate here and answer questions.
+For community help see https://cassandra.apache.org/_/community.html
 
 ## Contributing
 
-To protect the community, all contributors are required to sign the [DataStax Spark Cassandra Connector Contribution License Agreement](https://cla.datastax.com/). The process is completely electronic and should only take a few minutes.
-
-To develop this project, we recommend using IntelliJ IDEA. Make sure you have
-installed and enabled the Scala Plugin. Open the project with IntelliJ IDEA and
-it will automatically create the project structure from the provided SBT
-configuration.
+To protect the community, all contributors are required to sign the Apache Software Foundation's [Contribution License Agreement](https://www.apache.org/licenses/contributor-agreements.html#clas).
 
 [Tips for Developing the Spark Cassandra Connector](doc/developers.md)
 
@@ -197,7 +190,7 @@ To run unit and integration tests:
     ./sbt/sbt test
     ./sbt/sbt it:test
 
-Note that the integration tests require [CCM](https://github.com/riptano/ccm) to be installed on your machine.
+Note that the integration tests require [CCM](https://github.com/apache/cassandra-ccm) to be installed on your machine.
 See [Tips for Developing the Spark Cassandra Connector](doc/developers.md) for details.
 
 By default, integration tests start up a separate, single Cassandra instance and run Spark in local mode.
@@ -220,10 +213,12 @@ outputLocation defaults to doc/reference.md
 
 ## License
 
-Copyright 2014-2022, DataStax, Inc.
+Copyright 2014, Apache Software Foundation
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 
 http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+
+Apache Cassandra, Apache Spark, Apache, Tomcat, Lucene, Solr, Hadoop, Spark, TinkerPop, and Cassandra are trademarks of the Apache Software Foundation or its subsidiaries in Canada, the United States and/or other countries.
